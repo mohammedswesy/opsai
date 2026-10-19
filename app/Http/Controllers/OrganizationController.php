@@ -58,6 +58,7 @@ class OrganizationController extends Controller
         }
 
         $request->session()->put('current_organization_id', $organization->id);
+        $request->session()->put('locale', $organization->locale);
 
         return redirect()->route('dashboard');
     }
@@ -81,6 +82,7 @@ class OrganizationController extends Controller
                 'currency' => $organization->currency,
                 'locale' => $organization->locale,
                 'status' => $organization->status->value,
+                'tax_rate' => $organization->taxRate(),
             ],
             'countries' => config('opsai.countries'),
             'currencies' => config('opsai.currencies'),
@@ -102,6 +104,11 @@ class OrganizationController extends Controller
         if ($role !== OrganizationRole::Owner) {
             unset($data['status']);
         }
+
+        $settings = $organization->settings ?? [];
+        $settings['tax_rate'] = $data['tax_rate'] ?? ($settings['tax_rate'] ?? '0');
+        unset($data['tax_rate']);
+        $data['settings'] = $settings;
 
         $organization->update($data);
 

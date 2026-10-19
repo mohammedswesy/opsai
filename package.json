@@ -5,9 +5,11 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
-        "types": "tsc --noEmit"
+        "types": "tsc --noEmit",
+        "e2e": "playwright test"
     },
     "devDependencies": {
+        "@playwright/test": "^1.64.0",
         "@tailwindcss/vite": "^4.0.0",
         "@types/react": "^19.3.0",
         "@types/react-dom": "^19.3.0",

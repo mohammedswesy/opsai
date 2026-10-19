@@ -7,6 +7,7 @@ use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -24,9 +25,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(SecureHeaders::class);
         $middleware->statefulApi();
 
+        $middleware->validateCsrfTokens(except: [
+            'webhooks/whatsapp',
+        ]);
+
         $middleware->alias([
             'organization' => EnsureCurrentOrganization::class,
         ]);
+
+        $middleware->prependToPriorityList(SubstituteBindings::class, EnsureCurrentOrganization::class);
 
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo(fn () => route('dashboard'));

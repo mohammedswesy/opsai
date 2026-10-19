@@ -41,6 +41,7 @@ class UpdateOrganizationRequest extends FormRequest
             'currency' => ['required', 'string', 'size:3', 'alpha'],
             'locale' => ['required', Rule::in(config('opsai.locales'))],
             'status' => ['required', Rule::in(OrganizationStatus::values())],
+            'tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ];
     }
 }

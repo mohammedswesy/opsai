@@ -21,4 +21,17 @@ Session-authenticated pages:
 - `GET|POST /branches`, `GET|PUT|DELETE /branches/{branch}`
 - `GET|POST /users`, `PUT|DELETE /users/{user}`
 
-Financial and operational endpoints are not published yet.
+Operational pages, all inside the authenticated organization middleware:
+
+- `customers`, `services`, `technicians`
+- `requests`, `appointments`, `work-orders`, `POST /work-orders/{work_order}/transition`
+- `tasks`
+- `invoices`, `POST /invoices/{invoice}/issue`, `POST /invoices/{invoice}/cancel`
+- `POST /work-orders/{work_order}/invoice`
+- `payments`, `POST /payments/{payment}/refund`
+
+These routes ignore a client-supplied organization id. Related customer, service, branch, technician, work order, and invoice ids must belong to the current organization. Invoice totals, payment status, and paid timestamps are calculated on the server.
+
+`POST /api/ai/chat`, `POST /api/ai/actions/{action}/confirm`, and `POST /api/ai/actions/{action}/reject` use the signed-in session and the current organization. The browser never receives the model API key.
+
+WhatsApp endpoints are not published yet. PDF download is not available yet.

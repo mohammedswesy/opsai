@@ -1,3 +1,5 @@
+import { Card } from '@/components/Card';
+import { Button, ButtonLink } from '@/components/Button';
 import { Link, router } from '@inertiajs/react';
 import { useState, type ReactNode } from 'react';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -27,16 +29,16 @@ export default function BranchesIndex({ branches, canManage }: { branches: Branc
                 subtitle={t.branches.subtitle}
                 action={
                     canManage ? (
-                        <Link href="/branches/create" className="rounded-md bg-zinc-900 px-3 py-2 text-sm text-white">
+                        <ButtonLink variant="primary" href="/branches/create">
                             {t.branches.create}
-                        </Link>
+                        </ButtonLink>
                     ) : null
                 }
             />
             {branches.length === 0 ? (
                 <EmptyState title={t.branches.empty} />
             ) : (
-                <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white">
+                <Card className="overflow-x-auto">
                     <table className="min-w-full text-sm">
                         <thead className="bg-zinc-50 text-start text-zinc-500">
                             <tr>
@@ -70,7 +72,7 @@ export default function BranchesIndex({ branches, canManage }: { branches: Branc
                             ))}
                         </tbody>
                     </table>
-                </div>
+                </Card>
             )}
             <ConfirmDialog
                 open={pendingId !== null}

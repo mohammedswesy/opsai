@@ -1,6 +1,6 @@
 # OpsAI
 
-OpsAI is a multi-tenant operations platform for service businesses. Phase 1 is the foundation: authentication, organizations, roles, branches, and tenant isolation. Customers, jobs, invoices, AI, and WhatsApp are not built yet.
+OpsAI is a multi-tenant operations platform for service businesses. The current build covers organizations, operations, finance, and an assistant that reads live data through application tools. WhatsApp and card payment gateways are not built yet.
 
 ## Stack
 
@@ -39,6 +39,10 @@ These accounts are created by `php artisan db:seed`. The password for every demo
 | support@riyadh-cooling.test | Riyadh Cooling Services | customer service |
 | owner@jeddah-maintenance.test | Jeddah Maintenance Pro | owner |
 
+## Assistant
+
+Copy the AI settings from `.env.example`. `AI_PROVIDER=fake` answers from the application without calling an external model. Set `AI_PROVIDER=openai` and `AI_API_KEY` only on the server when you want the OpenAI adapter. Do not put the key in frontend code. Run `php artisan ai:health-check` on a development machine that has a key. See `docs/ai.md`.
+
 ## Tests
 
 ```bash
@@ -51,4 +55,4 @@ npm run build
 
 Implemented: registration, login, password reset, organization settings, team membership, branch management, role checks, and organization-scoped branch queries.
 
-Not implemented: customers, technicians as a domain, service requests, work orders, appointments, invoices, payments, AI tools, WhatsApp, notifications, and activity logs. See `docs/product-roadmap.md`.
+Not implemented: WhatsApp, card payment gateways, and invoice PDF files. See `docs/product-roadmap.md` and `docs/ai.md`.

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\OrganizationStatus;
+use App\Support\Money;
 use Database\Factories\OrganizationFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -63,6 +64,13 @@ class Organization extends Model
     public function branches(): HasMany
     {
         return $this->hasMany(Branch::class);
+    }
+
+    public function taxRate(): string
+    {
+        $rate = $this->settings['tax_rate'] ?? '0';
+
+        return is_numeric($rate) ? Money::normalize((string) $rate) : '0.00';
     }
 
     public static function uniqueSlug(string $name): string

@@ -14,8 +14,8 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $riyadh = $this->organization('Riyadh Cooling Services', 'riyadh-cooling-services', 'SA', 'Asia/Riyadh', 'SAR', 'ar');
-        $jeddah = $this->organization('Jeddah Maintenance Pro', 'jeddah-maintenance-pro', 'SA', 'Asia/Riyadh', 'SAR', 'en');
+        $riyadh = $this->organization('Riyadh Cooling Services', 'riyadh-cooling-services', 'SA', 'Asia/Riyadh', 'SAR', 'ar', '15');
+        $jeddah = $this->organization('Jeddah Maintenance Pro', 'jeddah-maintenance-pro', 'SA', 'Asia/Riyadh', 'AED', 'en', '5');
 
         $riyadhMain = $this->branch($riyadh, 'Riyadh Main', 'RYD-MAIN', 'Riyadh');
         $riyadhNorth = $this->branch($riyadh, 'North Riyadh', 'RYD-NORTH', 'Riyadh');
@@ -32,9 +32,12 @@ class DatabaseSeeder extends Seeder
         $riyadhMain->users()->attach([$owner->id, $manager->id, $technician->id]);
         $riyadhNorth->users()->attach([$dispatcher->id, $accountant->id, $support->id]);
         $jeddahBranch->users()->attach($jeddahOwner->id);
+
+        $this->call(OperationsSeeder::class);
+        $this->call(FinanceSeeder::class);
     }
 
-    private function organization(string $name, string $slug, string $country, string $timezone, string $currency, string $locale): Organization
+    private function organization(string $name, string $slug, string $country, string $timezone, string $currency, string $locale, string $taxRate): Organization
     {
         return Organization::query()->create([
             'name' => $name,
@@ -47,6 +50,7 @@ class DatabaseSeeder extends Seeder
             'status' => OrganizationStatus::Active,
             'email' => 'hello@'.str_replace('-', '', $slug).'.test',
             'phone' => '0110000000',
+            'settings' => ['tax_rate' => $taxRate],
         ]);
     }
 

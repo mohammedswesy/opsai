@@ -1,3 +1,5 @@
+import { Button } from '@/components/Button';
+import { Card, CardForm } from '@/components/Card';
 import { router, useForm } from '@inertiajs/react';
 import { useState, type ReactNode } from 'react';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -42,9 +44,7 @@ export default function UsersIndex({
         <>
             <PageHeader title={t.users.title} subtitle={t.users.subtitle} />
             {canManage ? (
-                <form
-                    className="mb-6 grid gap-4 rounded-lg border border-zinc-200 bg-white p-5 md:grid-cols-2"
-                    onSubmit={(event) => {
+                <CardForm className="mb-6 grid gap-4 p-5 md:grid-cols-2" onSubmit={(event) => {
                         event.preventDefault();
                         form.post('/users', { onSuccess: () => form.reset() });
                     }}
@@ -87,16 +87,16 @@ export default function UsersIndex({
                         </select>
                     </FormField>
                     <div className="md:col-span-2">
-                        <button type="submit" disabled={form.processing} className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white">
+                        <Button variant="primary" type="submit" disabled={form.processing}>
                             {t.users.add}
-                        </button>
+                        </Button>
                     </div>
-                </form>
+                </CardForm>
             ) : null}
             {members.length === 0 ? (
                 <EmptyState title={t.users.empty} />
             ) : (
-                <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white">
+                <Card className="overflow-x-auto">
                     <table className="min-w-full text-sm">
                         <thead className="bg-zinc-50 text-zinc-500">
                             <tr>
@@ -123,7 +123,7 @@ export default function UsersIndex({
                             ))}
                         </tbody>
                     </table>
-                </div>
+                </Card>
             )}
             <ConfirmDialog
                 open={pendingId !== null}

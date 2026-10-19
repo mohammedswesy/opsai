@@ -2,25 +2,13 @@
 
 OpsAI helps a service business move a customer request through assignment, the job, payment, and follow-up. AI is an automation layer on that workflow, not a separate product.
 
-## Done: foundation
+## Done: foundation, operations, finance, and the assistant
 
-Authentication, organizations, roles, branches, tenant isolation, English and Arabic UI direction, and a dashboard that shows real branch and member counts.
+Authentication, organizations, roles, branches, tenant isolation, English and Arabic UI direction, customers, services, technicians, service requests, appointments, work orders, tasks, invoices, manual payments, and an assistant that uses registered tools with confirmation for writes. Invoice PDF files, card gateways, and a live OpenAI check are not done.
 
-## Next: core operations
+## Done: WhatsApp channel
 
-Customers, services, technicians, service requests, appointments, work orders, tasks, and operational dashboard metrics.
-
-## Then: finance
-
-Invoices, invoice items, a payment gateway interface, overdue balances, and financial dashboard metrics. Totals will be calculated on the server.
-
-## Then: AI
-
-Provider interface, conversation storage, a tool registry that calls application services, schema validation, confirmation before sensitive actions, and audit records.
-
-## Then: WhatsApp
-
-Provider interface, signed webhooks, customer matching, request creation, and outbound delivery status.
+Signed webhooks, encrypted organization credentials, customer matching, a restricted customer tool set, confirmation before writes, and an inbox. Live Meta delivery has not been verified.
 
 ## Then: polish
 

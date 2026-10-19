@@ -1,3 +1,4 @@
+import { Button } from '@/components/Button';
 import { Link, useForm } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { controlClassName, FormField } from '@/components/FormField';
@@ -80,9 +81,9 @@ export default function Register({
                     ))}
                 </select>
             </FormField>
-            <button type="submit" disabled={form.processing} className="w-full rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white">
+            <Button variant="primary" className="w-full" type="submit" disabled={form.processing}>
                 {t.guest.register}
-            </button>
+            </Button>
             <Link href="/login" className="block text-sm text-teal-800">
                 {t.guest.hasAccount}
             </Link>

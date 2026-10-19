@@ -33,5 +33,10 @@
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <env name="INERTIA_SSR_ENABLED" value="false"/>
+        <env name="AI_PROVIDER" value="fake"/>
+        <env name="AI_RATE_LIMIT_PER_MINUTE" value="30"/>
+        <env name="WHATSAPP_PROVIDER" value="fake"/>
+        <env name="WHATSAPP_VERIFY_TOKEN" value="verify-token"/>
+        <env name="WHATSAPP_APP_SECRET" value="app-secret"/>
     </php>
 </phpunit>

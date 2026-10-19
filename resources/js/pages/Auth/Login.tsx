@@ -1,3 +1,4 @@
+import { Button } from '@/components/Button';
 import { Link, useForm } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import GuestLayout from '@/layouts/GuestLayout';
@@ -31,9 +32,9 @@ export default function Login() {
                 <input type="checkbox" checked={form.data.remember} onChange={(event) => form.setData('remember', event.target.checked)} />
                 {t.guest.remember}
             </label>
-            <button type="submit" disabled={form.processing} className="w-full rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white">
+            <Button variant="primary" className="w-full" type="submit" disabled={form.processing}>
                 {t.guest.login}
-            </button>
+            </Button>
             <div className="flex justify-between text-sm">
                 <Link href="/forgot-password" className="text-teal-800">
                     {t.guest.forgot}

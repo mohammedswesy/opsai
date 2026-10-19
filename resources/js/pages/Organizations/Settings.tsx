@@ -1,3 +1,5 @@
+import { Button } from '@/components/Button';
+import { Card, CardForm } from '@/components/Card';
 import { useForm } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { controlClassName, FormField } from '@/components/FormField';
@@ -18,6 +20,7 @@ type OrganizationForm = {
     currency: string;
     locale: string;
     status: string;
+    tax_rate: string;
 };
 
 export default function OrganizationSettings({
@@ -49,14 +52,13 @@ export default function OrganizationSettings({
         currency: organization.currency,
         locale: organization.locale,
         status: organization.status,
+        tax_rate: organization.tax_rate ?? '',
     });
 
     return (
         <>
             <PageHeader title={t.organizations.settings} subtitle={t.organizations.settingsSubtitle} />
-            <form
-                className="max-w-2xl space-y-4 rounded-lg border border-zinc-200 bg-white p-5"
-                onSubmit={(event) => {
+            <CardForm className="max-w-2xl space-y-4 p-5" onSubmit={(event) => {
                     event.preventDefault();
                     form.put('/organization');
                 }}
@@ -109,6 +111,9 @@ export default function OrganizationSettings({
                         ))}
                     </select>
                 </FormField>
+                <FormField label={t.finance.taxRate} error={form.errors.tax_rate}>
+                    <input className={controlClassName} value={form.data.tax_rate} disabled={!canUpdate} onChange={(event) => form.setData('tax_rate', event.target.value)} />
+                </FormField>
                 <FormField label={t.branches.status} error={form.errors.status}>
                     <select className={controlClassName} value={form.data.status} disabled={!canChangeStatus} onChange={(event) => form.setData('status', event.target.value)}>
                         {statuses.map((status) => (
@@ -119,11 +124,11 @@ export default function OrganizationSettings({
                     </select>
                 </FormField>
                 {canUpdate ? (
-                    <button type="submit" disabled={form.processing} className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white">
+                    <Button variant="primary" type="submit" disabled={form.processing}>
                         {t.organizations.save}
-                    </button>
+                    </Button>
                 ) : null}
-            </form>
+            </CardForm>
         </>
     );
 }

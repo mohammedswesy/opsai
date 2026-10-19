@@ -20,6 +20,7 @@ declare module '@inertiajs/core' {
                 locale: string;
                 currency: string;
                 country: string;
+                timezone: string;
                 status: string;
                 role: string;
             } | null;

@@ -34,6 +34,10 @@ class EnsureCurrentOrganization
             } else {
                 OrganizationContext::forget();
 
+                if ($request->expectsJson()) {
+                    abort(403, __('Choose an organization first.'));
+                }
+
                 return redirect()->route('organizations.index');
             }
         }
@@ -53,7 +57,9 @@ class EnsureCurrentOrganization
 
         OrganizationContext::set($organization, $role);
 
-        if (in_array($organization->locale, config('opsai.locales'), true)) {
+        $sessionLocale = $request->session()->get('locale');
+        if ((! is_string($sessionLocale) || ! in_array($sessionLocale, config('opsai.locales'), true))
+            && in_array($organization->locale, config('opsai.locales'), true)) {
             app()->setLocale($organization->locale);
             $request->session()->put('locale', $organization->locale);
         }

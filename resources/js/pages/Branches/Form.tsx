@@ -1,3 +1,5 @@
+import { Button } from '@/components/Button';
+import { Card, CardForm } from '@/components/Card';
 import { Link, useForm } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { controlClassName, FormField } from '@/components/FormField';
@@ -45,9 +47,7 @@ export default function BranchForm({
     return (
         <>
             <PageHeader title={branch ? t.branches.edit : t.branches.create} />
-            <form
-                className="max-w-2xl space-y-4 rounded-lg border border-zinc-200 bg-white p-5"
-                onSubmit={(event) => {
+            <CardForm className="max-w-2xl space-y-4 p-5" onSubmit={(event) => {
                     event.preventDefault();
                     if (branch) {
                         form.put(`/branches/${branch.id}`);
@@ -101,14 +101,14 @@ export default function BranchForm({
                     </select>
                 </FormField>
                 <div className="flex gap-3">
-                    <button type="submit" disabled={form.processing} className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white">
+                    <Button variant="primary" type="submit" disabled={form.processing}>
                         {t.branches.save}
-                    </button>
+                    </Button>
                     <Link href="/branches" className="rounded-md px-4 py-2 text-sm text-zinc-700">
                         {t.common.cancel}
                     </Link>
                 </div>
-            </form>
+            </CardForm>
         </>
     );
 }

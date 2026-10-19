@@ -37,4 +37,24 @@ Laravel also owns `sessions`, `password_reset_tokens`, `cache`, and `jobs`.
 - Foreign keys from branches and memberships back to organizations and users, with cascade deletes
 - Indexes on organization status, branch status, and membership role
 
-Customers, requests, work orders, invoices, AI conversations, and the other domain tables are not migrated yet.
+## Assistant tables
+
+`ai_conversations`, `ai_messages`, and `ai_actions` store organization-scoped chats and confirmed writes. Messages keep tool calls and results as JSON. Actions store the idempotency key, approval time, and execution time.
+
+## Finance tables
+
+`invoice_sequences` stores the last number for an organization and year. The unique key is `(organization_id, year)`.
+
+`invoices` stores the organization, optional branch, customer, optional work order, server-generated invoice number, status, dates, currency, and calculated money columns. Unique `(organization_id, invoice_number)`. Soft deleted.
+
+`invoice_items` stores description, quantity, unit price, tax rate, and calculated line amounts.
+
+`payments` stores a manual payment against an invoice in the same organization: amount, currency, method, status, reference, paid at, and created by.
+
+## Operations tables
+
+`customers`, `services`, and `technicians` are tenant-owned and soft deleted. `technician_skills` stores a skill name and an optional catalog service. `service_requests`, `appointments`, `work_orders`, `tasks`, and `activities` are tenant-owned and are not soft deleted.
+
+Appointments reference a work order through a foreign key added after `work_orders` exists. Work-order status changes are validated in application code. Appointment overlap is rejected for the same technician unless the appointment is cancelled.
+
+Invoices, payments, AI conversations, and WhatsApp messages are not migrated yet.

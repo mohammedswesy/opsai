@@ -55,6 +55,7 @@ class HandleInertiaRequests extends Middleware
                 'locale' => $context->organization->locale,
                 'currency' => $context->organization->currency,
                 'country' => $context->organization->country,
+                'timezone' => $context->organization->timezone,
                 'status' => $context->organization->status->value,
                 'role' => $context->role->value,
             ],
