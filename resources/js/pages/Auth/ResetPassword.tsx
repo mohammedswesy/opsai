@@ -1,5 +1,5 @@
 import { Button } from '@/components/Button';
-import { Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { controlClassName, FormField } from '@/components/FormField';
 import { useI18n } from '@/i18n';
@@ -22,7 +22,8 @@ export default function ResetPassword({ token, email }: { token: string; email: 
                 form.post('/reset-password');
             }}
         >
-            <h1 className="text-xl font-semibold">{t.guest.resetPassword}</h1>
+            <Head title={t.guest.resetPassword} />
+            <h1 className="text-xl font-semibold text-ink">{t.guest.resetPassword}</h1>
             <FormField label={t.guest.email} error={form.errors.email}>
                 <input className={controlClassName} type="email" value={form.data.email} onChange={(event) => form.setData('email', event.target.value)} />
             </FormField>
@@ -35,7 +36,7 @@ export default function ResetPassword({ token, email }: { token: string; email: 
             <Button variant="primary" className="w-full" type="submit" disabled={form.processing}>
                 {t.guest.resetPassword}
             </Button>
-            <Link href="/login" className="block text-sm text-teal-800">
+            <Link href="/login" className="block text-body font-medium text-brand hover:text-brand-strong">
                 {t.guest.backToLogin}
             </Link>
         </form>

@@ -1,42 +1,50 @@
 import type { LucideIcon } from 'lucide-react';
-import { Card } from '@/components/Card';
 
 const tones = {
-    default: 'bg-blue-50 text-blue-700 ring-blue-100',
-    success: 'bg-green-50 text-green-700 ring-green-100',
-    warning: 'bg-amber-50 text-amber-700 ring-amber-100',
-    danger: 'bg-red-50 text-red-700 ring-red-100',
-    info: 'bg-sky-50 text-sky-700 ring-sky-100',
+    default: { icon: 'bg-brand-soft text-brand', accent: 'before:bg-brand' },
+    success: { icon: 'bg-success-soft text-success', accent: 'before:bg-success' },
+    warning: { icon: 'bg-warning-soft text-warning', accent: 'before:bg-warning' },
+    danger: { icon: 'bg-danger-soft text-danger', accent: 'before:bg-danger' },
+    info: { icon: 'bg-info-soft text-info', accent: 'before:bg-info' },
 };
 
+/**
+ * Metric card. `primary` cards carry a tone accent on their start edge and a large
+ * figure; `quiet` cards are compact secondary stats. Cards are not interactive, so
+ * they have no hover effect. The label is the first <p> and the value the second
+ * (the e2e helpers read them in that order).
+ */
 export function KpiCard({
     label,
     value,
     icon: Icon,
     tone = 'default',
     size = 'primary',
+    hint,
 }: {
     label: string;
     value: number | string;
     icon?: LucideIcon;
     tone?: keyof typeof tones;
     size?: 'primary' | 'quiet';
+    hint?: string;
 }) {
     const quiet = size === 'quiet';
 
     return (
-        <Card className={`transition-[box-shadow,transform] duration-200 ease-out hover:-translate-y-px hover:shadow-[0_12px_28px_-8px_rgba(16,24,40,0.12)] ${quiet ? 'px-4 py-3' : 'px-5 py-4'}`}>
-            <article>
-                <div className="flex items-start justify-between gap-3">
-                    <p className={`font-medium text-zinc-500 ${quiet ? 'text-xs' : 'text-sm'}`}>{label}</p>
-                    {Icon ? (
-                        <span className={`flex shrink-0 items-center justify-center rounded-xl ring-1 ${quiet ? 'size-8' : 'size-10'} ${tones[tone]}`}>
-                            <Icon className={quiet ? 'size-4' : 'size-[18px]'} strokeWidth={1.75} />
-                        </span>
-                    ) : null}
-                </div>
-                <p className={`font-semibold tracking-tight text-zinc-900 tabular-nums ${quiet ? 'mt-2 text-xl leading-6' : 'mt-4 text-[30px] leading-9'}`}>{value}</p>
-            </article>
-        </Card>
+        <article
+            className={`relative overflow-hidden rounded-card border border-line bg-surface shadow-card ${quiet ? 'px-4 py-3' : `px-5 py-4 before:absolute before:inset-y-0 before:start-0 before:w-1 ${tones[tone].accent}`}`}
+        >
+            <div className="flex items-start justify-between gap-3">
+                <p className={`font-medium text-ink-secondary ${quiet ? 'text-caption' : 'text-body'}`}>{label}</p>
+                {Icon ? (
+                    <span className={`flex shrink-0 items-center justify-center rounded-control ${quiet ? 'size-8' : 'size-10'} ${tones[tone].icon}`}>
+                        <Icon className={quiet ? 'size-4' : 'size-5'} strokeWidth={1.75} aria-hidden="true" />
+                    </span>
+                ) : null}
+            </div>
+            <p className={`font-semibold tracking-tight text-ink tabular-nums ${quiet ? 'mt-1 text-heading' : 'mt-3 text-display'}`}>{value}</p>
+            {hint ? <p className="mt-1 text-caption text-ink-muted">{hint}</p> : null}
+        </article>
     );
 }

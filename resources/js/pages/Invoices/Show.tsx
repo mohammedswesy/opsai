@@ -1,12 +1,19 @@
-import { Card } from '@/components/Card';
-import { Button, ButtonLink } from '@/components/Button';
-import { Link, router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { useState, type ReactNode } from 'react';
+import { ActivityTimeline, type ActivityEntry } from '@/components/ActivityTimeline';
+import { Button, ButtonLink } from '@/components/Button';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { PageHeader } from '@/components/PageHeader';
+import { DescriptionItem, DescriptionList } from '@/components/DescriptionList';
+import { MoneySummary } from '@/components/MoneySummary';
+import { RecordHeader } from '@/components/RecordHeader';
+import { Section } from '@/components/Section';
 import { StatusBadge } from '@/components/StatusBadge';
+import { ExternalTextLink, TextLink } from '@/components/TextLink';
 import { useI18n } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout';
+import { useFormat } from '@/lib/format';
+import { optionLabel } from '@/lib/labels';
+import { useCan } from '@/lib/permissions';
 
 type Invoice = {
     id: string;
@@ -22,25 +29,40 @@ type Invoice = {
     amount_paid: string;
     amount_due: string;
     notes: string | null;
-    customer: { id: string; name: string } | null;
+    branch: { name: string } | null;
+    customer: { id: string; name: string; phone: string | null; email: string | null; address: string | null; city: string | null; country: string | null } | null;
     work_order: { id: string; title: string } | null;
-    items: { id: string; description: string; quantity: string; unit_price: string; tax: string; total: string }[];
+    items: { id: string; description: string; quantity: string; unit_price: string; tax: string; total: string; service: { name: string } | null }[];
     payments: { id: string; amount: string; method: string; status: string; paid_at: string; reference: string | null }[];
-    activities: { id: string; action: string; description: string | null; actor: { name: string } | null }[];
+    activities: ActivityEntry[];
 };
 
 export default function Show({ invoice, canManage, canPay }: { invoice: Invoice; canManage: boolean; canPay: boolean }) {
     const { t } = useI18n();
+    const format = useFormat();
+    const can = useCan();
+    const { organization } = usePage().props;
     const [canceling, setCanceling] = useState(false);
     const payable = ['issued', 'partially_paid', 'overdue'].includes(invoice.status);
+    const money = (value: string) => format.money(value, invoice.currency);
+    const customer = invoice.customer;
+    const separator = format.locale === 'ar' ? '، ' : ', ';
+    const address = customer ? [customer.address, customer.city, customer.country].filter(Boolean).join(separator) : '';
+    const hasDiscount = Number(invoice.discount) > 0;
 
     return (
         <>
-            <div className="print:hidden">
-            <PageHeader
+            <RecordHeader parent={{ label: t.nav.invoices, href: '/invoices' }}
+                eyebrow={t.detail.invoice}
                 title={invoice.invoice_number}
-                action={
-                    <div className="flex flex-wrap gap-2">
+                badges={<StatusBadge value={invoice.status} />}
+                meta={[
+                    { key: 'issue', label: t.finance.issueDate, value: <span className="tabular-nums">{format.date(invoice.issue_date)}</span> },
+                    { key: 'due', label: t.finance.dueDate, value: invoice.due_date ? <span className="tabular-nums">{format.date(invoice.due_date)}</span> : t.common.none },
+                    { key: 'outstanding', label: t.finance.outstanding, value: <span className="font-medium tabular-nums">{money(invoice.amount_due)}</span> },
+                ]}
+                actions={
+                    <>
                         {canManage && invoice.status === 'draft' ? (
                             <ButtonLink variant="secondary" href={`/invoices/${invoice.id}/edit`}>
                                 {t.common.edit}
@@ -61,104 +83,175 @@ export default function Show({ invoice, canManage, canPay }: { invoice: Invoice;
                                 {t.finance.cancelInvoice}
                             </Button>
                         ) : null}
-                    </div>
+                    </>
                 }
             />
+
+            <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] print:block">
+                <article className="min-w-0 rounded-card border border-line bg-surface shadow-card print:border-0 print:shadow-none">
+                    <div className="grid gap-6 p-5 sm:grid-cols-2">
+                        <div className="min-w-0">
+                            <h2 className="text-caption font-semibold text-ink-muted">{t.detail.from}</h2>
+                            <p className="mt-1 text-body font-medium text-ink">
+                                <bdi>{organization?.name}</bdi>
+                            </p>
+                            {invoice.branch ? (
+                                <p className="text-caption text-ink-secondary">
+                                    <bdi>{invoice.branch.name}</bdi>
+                                </p>
+                            ) : null}
+                        </div>
+                        <div className="min-w-0">
+                            <h2 className="text-caption font-semibold text-ink-muted">{t.detail.billTo}</h2>
+                            {customer ? (
+                                <div className="mt-1 space-y-0.5 text-body">
+                                    <p className="font-medium">
+                                        {can('customers.view') ? (
+                                            <TextLink href={`/customers/${customer.id}`}>
+                                                <bdi>{customer.name}</bdi>
+                                            </TextLink>
+                                        ) : (
+                                            <bdi className="text-ink">{customer.name}</bdi>
+                                        )}
+                                    </p>
+                                    {address ? (
+                                        <p className="text-caption text-ink-secondary">
+                                            <bdi>{address}</bdi>
+                                        </p>
+                                    ) : null}
+                                    {customer.phone ? (
+                                        <p className="text-caption text-ink-secondary">
+                                            <bdi dir="ltr">{customer.phone}</bdi>
+                                        </p>
+                                    ) : null}
+                                    {customer.email ? (
+                                        <p className="text-caption">
+                                            <ExternalTextLink href={`mailto:${customer.email}`}>
+                                                <bdi dir="ltr">{customer.email}</bdi>
+                                            </ExternalTextLink>
+                                        </p>
+                                    ) : null}
+                                </div>
+                            ) : (
+                                <p className="mt-1 text-body text-ink-subtle">{t.common.none}</p>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="border-t border-line p-5">
+                        <DescriptionList columns={3}>
+                            <DescriptionItem label={t.finance.issueDate}>
+                                <span className="tabular-nums">{format.date(invoice.issue_date)}</span>
+                            </DescriptionItem>
+                            <DescriptionItem label={t.finance.dueDate}>{invoice.due_date ? <span className="tabular-nums">{format.date(invoice.due_date)}</span> : null}</DescriptionItem>
+                            <DescriptionItem label={t.finance.currency}>{invoice.currency}</DescriptionItem>
+                            <DescriptionItem label={t.ops.relatedWorkOrder} full>
+                                {invoice.work_order ? (
+                                    <TextLink href={`/work-orders/${invoice.work_order.id}`}>
+                                        <bdi>{invoice.work_order.title}</bdi>
+                                    </TextLink>
+                                ) : null}
+                            </DescriptionItem>
+                        </DescriptionList>
+                    </div>
+
+                    <div className="overflow-x-auto border-t border-line">
+                        <table className="min-w-full text-body">
+                            <caption className="sr-only">{t.finance.items}</caption>
+                            <thead>
+                                <tr className="border-b border-line text-caption text-ink-muted">
+                                    <th scope="col" className="px-5 py-2.5 text-start font-medium">
+                                        {t.ops.description}
+                                    </th>
+                                    <th scope="col" className="px-3 py-2.5 text-end font-medium">
+                                        {t.finance.quantity}
+                                    </th>
+                                    <th scope="col" className="px-3 py-2.5 text-end font-medium">
+                                        {t.finance.unitPrice}
+                                    </th>
+                                    <th scope="col" className="px-3 py-2.5 text-end font-medium">
+                                        {t.detail.lineTax}
+                                    </th>
+                                    <th scope="col" className="px-5 py-2.5 text-end font-medium">
+                                        {t.finance.total}
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="text-ink">
+                                {invoice.items.map((item) => (
+                                    <tr key={item.id}>
+                                        <td className="min-w-48 px-5 py-3 align-top">
+                                            <bdi className="break-words">{item.description}</bdi>
+                                            {item.service ? (
+                                                <p className="text-caption text-ink-muted">
+                                                    <bdi>{item.service.name}</bdi>
+                                                </p>
+                                            ) : null}
+                                        </td>
+                                        <td className="px-3 py-3 text-end align-top whitespace-nowrap tabular-nums">{format.number(item.quantity, { maximumFractionDigits: 2 })}</td>
+                                        <td className="px-3 py-3 text-end align-top whitespace-nowrap tabular-nums">{money(item.unit_price)}</td>
+                                        <td className="px-3 py-3 text-end align-top whitespace-nowrap tabular-nums">{money(item.tax)}</td>
+                                        <td className="px-5 py-3 text-end align-top font-medium whitespace-nowrap tabular-nums">{money(item.total)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div className="flex flex-col gap-6 border-t border-line p-5 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0 sm:max-w-sm">
+                            {invoice.notes ? (
+                                <>
+                                    <h2 className="text-caption font-semibold text-ink-muted">{t.common.notes}</h2>
+                                    <p className="mt-1 text-body whitespace-pre-wrap break-words text-ink">
+                                        <bdi>{invoice.notes}</bdi>
+                                    </p>
+                                </>
+                            ) : null}
+                        </div>
+                        <MoneySummary
+                            className="w-full sm:ms-auto sm:max-w-xs"
+                            rows={[
+                                { key: 'subtotal', label: t.finance.subtotal, value: money(invoice.subtotal) },
+                                ...(hasDiscount ? [{ key: 'discount', label: t.finance.discount, value: money(invoice.discount) }] : []),
+                                { key: 'tax', label: t.finance.tax, value: money(invoice.tax) },
+                                { key: 'total', label: t.finance.total, value: money(invoice.total), emphasis: 'strong' as const },
+                                { key: 'paid', label: t.finance.paidAmount, value: money(invoice.amount_paid), tone: 'success' as const },
+                                { key: 'due', label: t.finance.outstanding, value: money(invoice.amount_due), emphasis: 'total' as const },
+                            ]}
+                        />
+                    </div>
+                </article>
+
+                <aside className="min-w-0 space-y-5 print:hidden">
+                    <Section title={t.nav.payments}>
+                        {invoice.payments.length === 0 ? (
+                            <p className="text-body text-ink-muted">{t.common.none}</p>
+                        ) : (
+                            <ul className="divide-y divide-line">
+                                {invoice.payments.map((payment) => (
+                                    <li key={payment.id} className="flex items-start justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+                                        <div className="min-w-0 text-body">
+                                            <TextLink href={`/payments/${payment.id}`} className="tabular-nums">
+                                                {money(payment.amount)}
+                                            </TextLink>
+                                            <p className="mt-0.5 text-caption text-ink-muted tabular-nums">
+                                                {format.dateTime(payment.paid_at)} · {optionLabel(t.labels, payment.method)}
+                                            </p>
+                                        </div>
+                                        <StatusBadge value={payment.status} />
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </Section>
+
+                    <Section title={t.ops.activity}>
+                        <ActivityTimeline items={invoice.activities} />
+                    </Section>
+                </aside>
             </div>
-            <article className="print:text-black">
-            <h1 className="mb-4 hidden text-xl font-semibold print:block">{invoice.invoice_number}</h1>
-            <Card className="mb-6 grid gap-3 p-5 shadow-sm print:border-0 print:shadow-none sm:grid-cols-2">
-                <p>
-                    {t.ops.customer}: {invoice.customer ? <Link href={`/customers/${invoice.customer.id}`}>{invoice.customer.name}</Link> : t.common.none}
-                </p>
-                <p>
-                    {t.ops.relatedWorkOrder}: {invoice.work_order ? <Link href={`/work-orders/${invoice.work_order.id}`}>{invoice.work_order.title}</Link> : t.common.none}
-                </p>
-                <p>
-                    {t.finance.issueDate}: {invoice.issue_date.slice(0, 10)}
-                </p>
-                <p>
-                    {t.finance.dueDate}: {invoice.due_date ? invoice.due_date.slice(0, 10) : t.common.none}
-                </p>
-                <p>
-                    {t.finance.currency}: {invoice.currency}
-                </p>
-                <StatusBadge value={invoice.status} />
-                <p>
-                    {t.finance.subtotal}: {invoice.subtotal}
-                </p>
-                <p>
-                    {t.finance.discount}: {invoice.discount}
-                </p>
-                <p>
-                    {t.finance.tax}: {invoice.tax}
-                </p>
-                <p className="text-base font-semibold tabular-nums text-zinc-900">
-                    {t.finance.total}: {invoice.total}
-                </p>
-                <p className="tabular-nums text-green-700">
-                    {t.finance.paidAmount}: {invoice.amount_paid}
-                </p>
-                <p className="text-lg font-semibold tabular-nums text-zinc-900">
-                    {t.finance.outstanding}: {invoice.amount_due} {invoice.currency}
-                </p>
-                {invoice.notes ? <p className="break-words sm:col-span-2">{invoice.notes}</p> : null}
-            </Card>
-            <Card className="mb-6 overflow-x-auto p-5">
-                <h2 className="mb-3 font-medium">{t.finance.items}</h2>
-                <table className="min-w-full text-sm">
-                    <thead>
-                        <tr className="text-zinc-500">
-                            <th className="px-2 py-2 text-start">{t.ops.description}</th>
-                            <th className="px-2 py-2 text-start">{t.finance.quantity}</th>
-                            <th className="px-2 py-2 text-start">{t.finance.unitPrice}</th>
-                            <th className="px-2 py-2 text-start">{t.finance.total}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {invoice.items.map((item) => (
-                            <tr key={item.id}>
-                                <td className="px-2 py-2">{item.description}</td>
-                                <td className="px-2 py-2">{item.quantity}</td>
-                                <td className="px-2 py-2">{item.unit_price}</td>
-                                <td className="px-2 py-2">{item.total}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </Card>
-            <Card className="mb-6 p-5 text-sm">
-                <h2 className="mb-3 font-medium">{t.nav.payments}</h2>
-                {invoice.payments.length === 0 ? (
-                    <p className="text-zinc-500">{t.common.none}</p>
-                ) : (
-                    <ul className="space-y-2">
-                        {invoice.payments.map((payment) => (
-                            <li key={payment.id}>
-                                <Link href={`/payments/${payment.id}`} className="text-teal-800">
-                                    {payment.amount} {invoice.currency}
-                                </Link>{' '}
-                                <StatusBadge value={payment.status} />
-                            </li>
-                        ))}
-                    </ul>
-                )}
-            </Card>
-            <Card className="p-5 text-sm print:hidden">
-                <h2 className="mb-3 font-medium">{t.ops.activity}</h2>
-                {invoice.activities.length === 0 ? (
-                    <p className="text-zinc-500">{t.ops.noActivity}</p>
-                ) : (
-                    <ul className="space-y-2">
-                        {invoice.activities.map((activity) => (
-                            <li key={activity.id}>
-                                {activity.actor?.name ?? t.common.none} {activity.action} {activity.description}
-                            </li>
-                        ))}
-                    </ul>
-                )}
-            </Card>
-            </article>
+
             <ConfirmDialog
                 open={canceling}
                 title={t.finance.confirmCancel}

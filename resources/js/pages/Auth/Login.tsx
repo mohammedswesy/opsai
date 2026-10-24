@@ -1,5 +1,5 @@
 import { Button } from '@/components/Button';
-import { Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import GuestLayout from '@/layouts/GuestLayout';
 import { controlClassName, FormField } from '@/components/FormField';
@@ -21,25 +21,26 @@ export default function Login() {
                 form.post('/login');
             }}
         >
-            <h1 className="text-xl font-semibold">{t.guest.login}</h1>
+            <Head title={t.guest.login} />
+            <h1 className="text-xl font-semibold text-ink">{t.guest.login}</h1>
             <FormField label={t.guest.email} error={form.errors.email}>
                 <input className={controlClassName} type="email" value={form.data.email} onChange={(event) => form.setData('email', event.target.value)} autoComplete="username" />
             </FormField>
             <FormField label={t.guest.password} error={form.errors.password}>
                 <input className={controlClassName} type="password" value={form.data.password} onChange={(event) => form.setData('password', event.target.value)} autoComplete="current-password" />
             </FormField>
-            <label className="flex items-center gap-2 text-sm text-zinc-600">
+            <label className="flex items-center gap-2 text-body text-ink-secondary">
                 <input type="checkbox" checked={form.data.remember} onChange={(event) => form.setData('remember', event.target.checked)} />
                 {t.guest.remember}
             </label>
             <Button variant="primary" className="w-full" type="submit" disabled={form.processing}>
                 {t.guest.login}
             </Button>
-            <div className="flex justify-between text-sm">
-                <Link href="/forgot-password" className="text-teal-800">
+            <div className="flex flex-wrap justify-between gap-2 text-body">
+                <Link href="/forgot-password" className="font-medium text-brand hover:text-brand-strong">
                     {t.guest.forgot}
                 </Link>
-                <Link href="/register" className="text-teal-800">
+                <Link href="/register" className="font-medium text-brand hover:text-brand-strong">
                     {t.guest.noAccount}
                 </Link>
             </div>

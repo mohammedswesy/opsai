@@ -30,7 +30,7 @@ export default function Form({ service }: { service: CatalogItem | null }) {
 
     return (
         <>
-            <PageHeader title={service ? t.common.edit : t.ops.create} subtitle={t.nav.services} />
+            <PageHeader parent={{ label: t.nav.services, href: '/services' }} title={service ? t.common.edit : t.ops.create} subtitle={t.nav.services} />
             <CardForm className="grid max-w-3xl gap-4 p-5" onSubmit={(event) => {
                     event.preventDefault();
                     const payload = {

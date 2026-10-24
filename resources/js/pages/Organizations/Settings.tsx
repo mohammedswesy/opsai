@@ -6,6 +6,7 @@ import { controlClassName, FormField } from '@/components/FormField';
 import { PageHeader } from '@/components/PageHeader';
 import { useI18n } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout';
+import { optionLabel } from '@/lib/labels';
 
 type OrganizationForm = {
     id: string;
@@ -106,7 +107,7 @@ export default function OrganizationSettings({
                     <select className={controlClassName} value={form.data.locale} disabled={!canUpdate} onChange={(event) => form.setData('locale', event.target.value)}>
                         {locales.map((locale) => (
                             <option key={locale} value={locale}>
-                                {locale}
+                                {optionLabel(t.labels, locale)}
                             </option>
                         ))}
                     </select>
@@ -118,7 +119,7 @@ export default function OrganizationSettings({
                     <select className={controlClassName} value={form.data.status} disabled={!canChangeStatus} onChange={(event) => form.setData('status', event.target.value)}>
                         {statuses.map((status) => (
                             <option key={status} value={status}>
-                                {status}
+                                {optionLabel(t.labels, status)}
                             </option>
                         ))}
                     </select>

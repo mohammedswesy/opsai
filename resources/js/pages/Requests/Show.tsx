@@ -1,44 +1,74 @@
-import { Card } from '@/components/Card';
-import { Button, ButtonLink } from '@/components/Button';
-import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
-import { PageHeader } from '@/components/PageHeader';
+import { ActivityTimeline, type ActivityEntry } from '@/components/ActivityTimeline';
+import { ButtonLink } from '@/components/Button';
+import { DescriptionItem, DescriptionList } from '@/components/DescriptionList';
 import { PriorityBadge } from '@/components/PriorityBadge';
+import { RecordHeader, type RecordMeta } from '@/components/RecordHeader';
+import { Section } from '@/components/Section';
 import { StatusBadge } from '@/components/StatusBadge';
+import { ExternalTextLink, TextLink } from '@/components/TextLink';
 import { useI18n } from '@/i18n';
-import { optionLabel } from '@/lib/labels';
 import AppLayout from '@/layouts/AppLayout';
+import { useFormat } from '@/lib/format';
+import { optionLabel } from '@/lib/labels';
+import { useCan } from '@/lib/permissions';
 
-export default function Show({
-    serviceRequest,
-    canManage,
-}: {
-    serviceRequest: {
-        id: string;
-        subject: string;
-        description: string;
-        priority: string;
-        status: string;
-        source: string;
-        preferred_date: string | null;
-        preferred_time: string | null;
-        location: string | null;
-        customer: { id: string; name: string } | null;
-        service: { name: string } | null;
-        appointments: { id: string; scheduled_start: string; status: string; technician: { user: { name: string } | null } | null }[];
-        work_order: { id: string; title: string; status: string; technician: { user: { name: string } | null } | null } | null;
-        activities: { id: string; action: string; description: string | null; actor: { name: string } | null }[];
-    };
-    canManage: boolean;
-}) {
+type Person = { user: { name: string } | null } | null;
+
+type ServiceRequest = {
+    id: string;
+    subject: string;
+    description: string;
+    priority: string;
+    status: string;
+    source: string;
+    requested_at: string | null;
+    preferred_date: string | null;
+    preferred_time: string | null;
+    location: string | null;
+    branch: { name: string } | null;
+    customer: { id: string; name: string; phone: string | null; whatsapp_number: string | null; email: string | null } | null;
+    service: { name: string } | null;
+    appointments: { id: string; scheduled_start: string; scheduled_end: string; status: string; technician: Person }[];
+    work_order: { id: string; title: string; status: string; technician: Person } | null;
+    activities: ActivityEntry[];
+};
+
+export default function Show({ serviceRequest, canManage }: { serviceRequest: ServiceRequest; canManage: boolean }) {
     const { t } = useI18n();
-    const technician = serviceRequest.work_order?.technician?.user?.name ?? serviceRequest.appointments[0]?.technician?.user?.name;
+    const format = useFormat();
+    const can = useCan();
+    const customer = serviceRequest.customer;
+    const technician = serviceRequest.work_order?.technician?.user?.name ?? serviceRequest.appointments[0]?.technician?.user?.name ?? null;
+    const preferred = [
+        serviceRequest.preferred_date ? format.date(serviceRequest.preferred_date) : null,
+        serviceRequest.preferred_time ? format.time(serviceRequest.preferred_time) : null,
+    ]
+        .filter(Boolean)
+        .join(' · ');
+
+    const meta: RecordMeta[] = [
+        { key: 'customer', label: t.ops.customer, value: customer ? <bdi>{customer.name}</bdi> : t.common.none },
+        { key: 'technician', label: t.ops.assignedTechnician, value: technician ?? t.common.none },
+    ];
+
+    if (serviceRequest.requested_at) {
+        meta.push({ key: 'requested', label: t.detail.requested, value: <span className="tabular-nums">{format.dateTime(serviceRequest.requested_at)}</span> });
+    }
 
     return (
         <>
-            <PageHeader
+            <RecordHeader parent={{ label: t.nav.requests, href: '/requests' }}
+                eyebrow={t.ops.relatedRequest}
                 title={serviceRequest.subject}
-                action={
+                badges={
+                    <>
+                        <StatusBadge value={serviceRequest.status} />
+                        <PriorityBadge value={serviceRequest.priority} />
+                    </>
+                }
+                meta={meta}
+                actions={
                     canManage ? (
                         <ButtonLink variant="primary" href={`/requests/${serviceRequest.id}/edit`}>
                             {t.common.edit}
@@ -46,69 +76,106 @@ export default function Show({
                     ) : null
                 }
             />
-            <Card className="mb-6 grid gap-3 p-5 sm:grid-cols-2">
-                <p>
-                    {t.ops.customer}: {serviceRequest.customer ? <Link href={`/customers/${serviceRequest.customer.id}`}>{serviceRequest.customer.name}</Link> : t.common.none}
-                </p>
-                <p>
-                    {t.ops.service}: {serviceRequest.service?.name ?? t.common.none}
-                </p>
-                <p>{serviceRequest.description}</p>
-                <PriorityBadge value={serviceRequest.priority} />
-                <StatusBadge value={serviceRequest.status} />
-                <p>
-                    {t.ops.source}: {optionLabel(t.labels, serviceRequest.source)}
-                </p>
-                <p>
-                    {t.ops.preferredDate}: {serviceRequest.preferred_date ?? t.common.none} {serviceRequest.preferred_time ?? ''}
-                </p>
-                <p>
-                    {t.ops.location}: {serviceRequest.location ?? t.common.none}
-                </p>
-                <p>
-                    {t.ops.assignedTechnician}: {technician ?? t.common.none}
-                </p>
-            </Card>
-            <Card className="mb-6 p-5 text-sm">
-                <h2 className="mb-2 font-medium">{t.ops.relatedAppointment}</h2>
-                {serviceRequest.appointments.length === 0 ? (
-                    <p className="text-zinc-500">{t.common.none}</p>
-                ) : (
-                    serviceRequest.appointments.map((appointment) => (
-                        <p key={appointment.id}>
-                            {appointment.scheduled_start} <StatusBadge value={appointment.status} />
-                        </p>
-                    ))
-                )}
-            </Card>
-            <Card className="mb-6 p-5 text-sm">
-                <h2 className="mb-2 font-medium">{t.ops.relatedWorkOrder}</h2>
-                {serviceRequest.work_order ? (
-                    <Link href={`/work-orders/${serviceRequest.work_order.id}`} className="text-teal-800">
-                        {serviceRequest.work_order.title}
-                    </Link>
-                ) : canManage ? (
-                    <Link href={`/work-orders/create?service_request_id=${serviceRequest.id}&customer_id=${serviceRequest.customer?.id ?? ''}`} className="text-teal-800">
-                        {t.ops.create}
-                    </Link>
-                ) : (
-                    <p className="text-zinc-500">{t.common.none}</p>
-                )}
-            </Card>
-            <Card className="p-5">
-                <h2 className="mb-3 font-medium">{t.ops.activity}</h2>
-                {serviceRequest.activities.length === 0 ? (
-                    <p className="text-sm text-zinc-500">{t.ops.noActivity}</p>
-                ) : (
-                    <ul className="space-y-2 text-sm">
-                        {serviceRequest.activities.map((activity) => (
-                            <li key={activity.id}>
-                                {activity.actor?.name ?? t.common.none} {activity.action} {activity.description}
-                            </li>
-                        ))}
-                    </ul>
-                )}
-            </Card>
+
+            <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
+                <div className="min-w-0 space-y-5">
+                    <Section title={t.detail.details}>
+                        <DescriptionList>
+                            <DescriptionItem label={t.ops.description} full isolate multiline>
+                                {serviceRequest.description}
+                            </DescriptionItem>
+                            <DescriptionItem label={t.ops.service} isolate>
+                                {serviceRequest.service?.name}
+                            </DescriptionItem>
+                            <DescriptionItem label={t.ops.source}>{optionLabel(t.labels, serviceRequest.source)}</DescriptionItem>
+                            <DescriptionItem label={t.ops.preferredDate}>{preferred ? <span className="tabular-nums">{preferred}</span> : null}</DescriptionItem>
+                            <DescriptionItem label={t.ops.location} isolate>
+                                {serviceRequest.location}
+                            </DescriptionItem>
+                            <DescriptionItem label={t.ops.branch} isolate>
+                                {serviceRequest.branch?.name}
+                            </DescriptionItem>
+                            <DescriptionItem label={t.detail.requested}>{serviceRequest.requested_at ? format.dateTime(serviceRequest.requested_at) : null}</DescriptionItem>
+                        </DescriptionList>
+                    </Section>
+
+                    <Section title={t.ops.activity}>
+                        <ActivityTimeline items={serviceRequest.activities} />
+                    </Section>
+                </div>
+
+                <aside className="min-w-0 space-y-5">
+                    <Section title={t.ops.customer}>
+                        {customer ? (
+                            <DescriptionList columns={1}>
+                                <DescriptionItem label={t.ops.customer}>
+                                    {can('customers.view') ? (
+                                        <TextLink href={`/customers/${customer.id}`}>
+                                            <bdi>{customer.name}</bdi>
+                                        </TextLink>
+                                    ) : (
+                                        <bdi>{customer.name}</bdi>
+                                    )}
+                                </DescriptionItem>
+                                <DescriptionItem label={t.ops.phone} ltr>
+                                    {customer.phone ? <ExternalTextLink href={`tel:${customer.phone}`}>{customer.phone}</ExternalTextLink> : null}
+                                </DescriptionItem>
+                                <DescriptionItem label={t.ops.whatsapp} ltr>
+                                    {customer.whatsapp_number}
+                                </DescriptionItem>
+                                <DescriptionItem label={t.detail.email} ltr>
+                                    {customer.email}
+                                </DescriptionItem>
+                            </DescriptionList>
+                        ) : (
+                            <p className="text-body text-ink-muted">{t.common.none}</p>
+                        )}
+                    </Section>
+
+                    <Section title={t.ops.relatedAppointment}>
+                        {serviceRequest.appointments.length === 0 ? (
+                            <p className="text-body text-ink-muted">{t.common.none}</p>
+                        ) : (
+                            <ul className="divide-y divide-line">
+                                {serviceRequest.appointments.map((appointment) => (
+                                    <li key={appointment.id} className="py-2.5 first:pt-0 last:pb-0">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <p className="text-body text-ink tabular-nums">
+                                                {format.dateTime(appointment.scheduled_start)} –{' '}
+                                                {format.sameDay(appointment.scheduled_start, appointment.scheduled_end) ? format.time(appointment.scheduled_end) : format.dateTime(appointment.scheduled_end)}
+                                            </p>
+                                            <StatusBadge value={appointment.status} />
+                                        </div>
+                                        <p className="mt-0.5 text-caption text-ink-muted">
+                                            <bdi>{appointment.technician?.user?.name ?? t.common.none}</bdi>
+                                        </p>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </Section>
+
+                    <Section title={t.ops.relatedWorkOrder}>
+                        {serviceRequest.work_order ? (
+                            <div className="space-y-1.5">
+                                <div className="flex items-start justify-between gap-3">
+                                    <TextLink href={`/work-orders/${serviceRequest.work_order.id}`} className="min-w-0 break-words">
+                                        <bdi>{serviceRequest.work_order.title}</bdi>
+                                    </TextLink>
+                                    <StatusBadge value={serviceRequest.work_order.status} />
+                                </div>
+                                <p className="text-caption text-ink-muted">
+                                    <bdi>{serviceRequest.work_order.technician?.user?.name ?? t.common.none}</bdi>
+                                </p>
+                            </div>
+                        ) : canManage ? (
+                            <TextLink href={`/work-orders/create?service_request_id=${serviceRequest.id}&customer_id=${customer?.id ?? ''}`}>{t.detail.createWorkOrder}</TextLink>
+                        ) : (
+                            <p className="text-body text-ink-muted">{t.common.none}</p>
+                        )}
+                    </Section>
+                </aside>
+            </div>
         </>
     );
 }

@@ -11,14 +11,66 @@
     --font-sans: 'Inter', 'IBM Plex Sans Arabic', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 
+    /*
+     * Semantic tokens. New UI should use these (bg-surface, text-ink-muted, border-line,
+     * bg-success-soft, rounded-card, shadow-card, text-title, ...) instead of raw palette
+     * classes. The zinc/teal overrides further down stay until every page has moved over.
+     */
     --color-canvas: #f6f8fb;
+    --color-surface: #ffffff;
+    --color-surface-muted: #f8fafc;
+
     --color-ink: #0f172a;
     --color-ink-secondary: #475569;
-    --color-ink-muted: #94a3b8;
+    --color-ink-muted: #64748b;
+    --color-ink-subtle: #94a3b8;
+
     --color-line: #e2e8f0;
+    --color-line-strong: #cbd5e1;
+
     --color-brand: #2563eb;
     --color-brand-strong: #1d4ed8;
     --color-brand-soft: #eff6ff;
+    --color-brand-border: #bfdbfe;
+    --color-on-brand: #ffffff;
+
+    --color-success: #047857;
+    --color-success-soft: #ecfdf5;
+    --color-success-border: #a7f3d0;
+    --color-warning: #b45309;
+    --color-warning-soft: #fffbeb;
+    --color-warning-border: #fde68a;
+    --color-danger: #be123c;
+    --color-danger-soft: #fff1f2;
+    --color-danger-border: #fecdd3;
+    --color-info: #0369a1;
+    --color-info-soft: #f0f9ff;
+    --color-info-border: #bae6fd;
+
+    --radius-control: 0.625rem;
+    --radius-badge: 9999px;
+    --radius-card: 1rem;
+    --radius-overlay: 1rem;
+
+    --shadow-control: 0 1px 2px rgb(16 24 40 / 0.06);
+    --shadow-card: 0 1px 2px rgb(16 24 40 / 0.04), 0 8px 24px -8px rgb(16 24 40 / 0.08);
+    --shadow-card-hover: 0 12px 28px -8px rgb(16 24 40 / 0.12);
+    --shadow-overlay: 0 24px 48px -12px rgb(16 24 40 / 0.22);
+
+    --text-display: 1.875rem;
+    --text-display--line-height: 2.25rem;
+    --text-title: 1.625rem;
+    --text-title--line-height: 2rem;
+    --text-heading: 0.9375rem;
+    --text-heading--line-height: 1.25rem;
+    --text-body: 0.875rem;
+    --text-body--line-height: 1.25rem;
+    --text-caption: 0.75rem;
+    --text-caption--line-height: 1rem;
+    --text-micro: 0.6875rem;
+    --text-micro--line-height: 1rem;
+
+    /* Palette remaps kept from the original theme; removed in a later step. */
 
     --color-zinc-50: #f8fafc;
     --color-zinc-100: #f8fafc;

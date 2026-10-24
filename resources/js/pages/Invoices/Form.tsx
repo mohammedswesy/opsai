@@ -53,7 +53,7 @@ export default function Form({
 
     return (
         <>
-            <PageHeader title={invoice ? t.common.edit : t.ops.create} subtitle={t.nav.invoices} />
+            <PageHeader parent={{ label: t.nav.invoices, href: '/invoices' }} title={invoice ? t.common.edit : t.ops.create} subtitle={t.nav.invoices} />
             <CardForm className="grid max-w-3xl gap-4 p-5" onSubmit={(event) => {
                     event.preventDefault();
                     const payload = {

@@ -7,6 +7,8 @@ import { PageHeader } from '@/components/PageHeader';
 import { useI18n } from '@/i18n';
 import { optionLabel } from '@/lib/labels';
 import AppLayout from '@/layouts/AppLayout';
+import { fromDateTimeInput, toDateTimeInput, useFormat } from '@/lib/format';
+import { PRIORITIES, TASK_STATUSES } from '@/lib/options';
 import type { Option } from '@/types/page';
 
 type TaskForm = {
@@ -22,6 +24,7 @@ type TaskForm = {
 
 export default function Form({ task, branches, members }: { task: TaskForm | null; branches: Option[]; members: Option[] }) {
     const { t } = useI18n();
+    const { timeZone } = useFormat();
     const form = useForm({
         branch_id: task?.branch_id ?? '',
         assigned_to: task?.assigned_to ?? '',
@@ -29,19 +32,19 @@ export default function Form({ task, branches, members }: { task: TaskForm | nul
         description: task?.description ?? '',
         priority: task?.priority ?? 'normal',
         status: task?.status ?? 'todo',
-        due_at: task?.due_at?.slice(0, 16) ?? '',
+        due_at: toDateTimeInput(task?.due_at, timeZone),
     });
 
     return (
         <>
-            <PageHeader title={task ? t.common.edit : t.ops.create} subtitle={t.nav.tasks} />
+            <PageHeader parent={{ label: t.nav.tasks, href: '/tasks' }} title={task ? t.common.edit : t.ops.create} subtitle={t.nav.tasks} />
             <CardForm className="grid max-w-3xl gap-4 p-5" onSubmit={(event) => {
                     event.preventDefault();
                     const payload = {
                         ...form.data,
                         branch_id: form.data.branch_id || null,
                         assigned_to: form.data.assigned_to || null,
-                        due_at: form.data.due_at || null,
+                        due_at: form.data.due_at ? fromDateTimeInput(form.data.due_at, timeZone) : null,
                     };
                     form.transform(() => payload);
                     if (task) {
@@ -79,7 +82,7 @@ export default function Form({ task, branches, members }: { task: TaskForm | nul
                 </FormField>
                 <FormField label={t.ops.priority} error={form.errors.priority}>
                     <select className={controlClassName} value={form.data.priority} onChange={(event) => form.setData('priority', event.target.value)}>
-                        {['low', 'normal', 'high', 'urgent'].map((value) => (
+                        {PRIORITIES.map((value) => (
                             <option key={value} value={value}>
                                 {optionLabel(t.labels, value)}
                             </option>
@@ -88,7 +91,7 @@ export default function Form({ task, branches, members }: { task: TaskForm | nul
                 </FormField>
                 <FormField label={t.ops.status} error={form.errors.status}>
                     <select className={controlClassName} value={form.data.status} onChange={(event) => form.setData('status', event.target.value)}>
-                        {['todo', 'in_progress', 'completed', 'cancelled'].map((value) => (
+                        {TASK_STATUSES.map((value) => (
                             <option key={value} value={value}>
                                 {optionLabel(t.labels, value)}
                             </option>

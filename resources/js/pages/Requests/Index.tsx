@@ -1,7 +1,8 @@
-import { Button, ButtonLink } from '@/components/Button';
+import type { ReactNode } from 'react';
+import { ButtonLink } from '@/components/Button';
 import { Chip } from '@/components/Chip';
-import { DataTable } from '@/components/DataTable';
-import { FilterBar } from '@/components/FilterBar';
+import { DataTable, type Column } from '@/components/DataTable';
+import { FilterBar, activeFilters } from '@/components/FilterBar';
 import { controlClassName } from '@/components/FormField';
 import { PageHeader } from '@/components/PageHeader';
 import { Pagination } from '@/components/Pagination';
@@ -10,10 +11,11 @@ import { RecordList } from '@/components/RecordList';
 import { SearchInput } from '@/components/SearchInput';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useI18n } from '@/i18n';
-import { optionLabel } from '@/lib/labels';
 import AppLayout from '@/layouts/AppLayout';
+import { useFormat } from '@/lib/format';
+import { optionLabel } from '@/lib/labels';
+import { PRIORITIES, REQUEST_SOURCES, REQUEST_STATUSES } from '@/lib/options';
 import type { Option, Paginator } from '@/types/page';
-import type { ReactNode } from 'react';
 
 type RequestRow = {
     id: string;
@@ -21,8 +23,12 @@ type RequestRow = {
     status: string;
     priority: string;
     source: string;
+    requested_at: string | null;
     customer: { name: string } | null;
+    service: { name: string } | null;
 };
+
+type Filters = { search?: string; status?: string; priority?: string; source?: string; branch_id?: string };
 
 export default function Index({
     requests,
@@ -31,30 +37,72 @@ export default function Index({
     canManage,
 }: {
     requests: Paginator<RequestRow>;
-    filters: { search?: string; status?: string; priority?: string; source?: string; branch_id?: string };
+    filters: Filters;
     branches: Option[];
     canManage: boolean;
 }) {
     const { t } = useI18n();
+    const format = useFormat();
+    const label = (value: string) => optionLabel(t.labels, value);
+    const active = activeFilters(filters, {
+        search: { label: t.common.search },
+        status: { label: t.ops.status, value: label },
+        priority: { label: t.ops.priority, value: label },
+        source: { label: t.ops.source, value: label },
+        branch_id: { label: t.ops.branch, value: (value) => branches.find((branch) => branch.id === value)?.name ?? value },
+    });
+
+    const columns: Column<RequestRow>[] = [
+        {
+            key: 'subject',
+            header: t.ops.subject,
+            primary: true,
+            isolate: true,
+            cell: (row) => (
+                <>
+                    <span className="block max-w-72 truncate" title={row.subject}>
+                        {row.subject}
+                    </span>
+                    {row.service ? (
+                        <span className="block max-w-72 truncate text-caption font-normal text-ink-muted" title={row.service.name}>
+                            {row.service.name}
+                        </span>
+                    ) : null}
+                </>
+            ),
+        },
+        { key: 'customer', header: t.ops.customer, truncate: (row) => row.customer?.name, cell: (row) => row.customer?.name ?? t.common.none },
+        { key: 'requested', header: t.ops.requestedAt, cell: (row) => <span className="md:whitespace-nowrap tabular-nums">{row.requested_at ? format.dateTime(row.requested_at) : t.common.none}</span> },
+        { key: 'priority', header: t.ops.priority, cell: (row) => <PriorityBadge value={row.priority} /> },
+        { key: 'status', header: t.ops.status, cell: (row) => <StatusBadge value={row.status} /> },
+        { key: 'source', header: t.ops.source, cell: (row) => <Chip>{label(row.source)}</Chip> },
+    ];
 
     return (
         <>
             <PageHeader title={t.nav.requests} action={canManage ? <ButtonLink href="/requests/create">{t.ops.create}</ButtonLink> : null} />
-            <FilterBar>
-                <SearchInput defaultValue={filters.search} placeholder={t.common.search} />
+            <FilterBar search={<SearchInput defaultValue={filters.search} placeholder={t.common.search} />} active={active}>
                 <select className={controlClassName} name="status" defaultValue={filters.status ?? ''} aria-label={t.ops.status}>
                     <option value="">{t.ops.status}</option>
-                    {['new', 'qualified', 'scheduled', 'in_progress', 'completed', 'cancelled'].map((value) => (
+                    {REQUEST_STATUSES.map((value) => (
                         <option key={value} value={value}>
-                            {optionLabel(t.labels, value)}
+                            {label(value)}
                         </option>
                     ))}
                 </select>
                 <select className={controlClassName} name="priority" defaultValue={filters.priority ?? ''} aria-label={t.ops.priority}>
                     <option value="">{t.ops.priority}</option>
-                    {['low', 'normal', 'high', 'urgent'].map((value) => (
+                    {PRIORITIES.map((value) => (
                         <option key={value} value={value}>
-                            {optionLabel(t.labels, value)}
+                            {label(value)}
+                        </option>
+                    ))}
+                </select>
+                <select className={controlClassName} name="source" defaultValue={filters.source ?? ''} aria-label={t.ops.source}>
+                    <option value="">{t.ops.source}</option>
+                    {REQUEST_SOURCES.map((value) => (
+                        <option key={value} value={value}>
+                            {label(value)}
                         </option>
                     ))}
                 </select>
@@ -66,35 +114,17 @@ export default function Index({
                         </option>
                     ))}
                 </select>
-                <Button variant="primary" className="md:col-span-4" type="submit">
-                    {t.common.search}
-                </Button>
             </FilterBar>
-            <RecordList empty={requests.data.length === 0}>
-                <DataTable headers={[t.ops.subject, t.ops.customer, t.ops.priority, t.ops.status, t.ops.source, '']}>
-                    {requests.data.map((request) => (
-                        <tr key={request.id}>
-                            <td className="px-4 py-3 font-medium text-zinc-900">{request.subject}</td>
-                            <td className="px-4 py-3">{request.customer?.name}</td>
-                            <td className="px-4 py-3">
-                                <PriorityBadge value={request.priority} />
-                            </td>
-                            <td className="px-4 py-3">
-                                <StatusBadge value={request.status} />
-                            </td>
-                            <td className="px-4 py-3">
-                                <Chip>{optionLabel(t.labels, request.source)}</Chip>
-                            </td>
-                            <td className="px-4 py-3 text-end">
-                                <ButtonLink href={`/requests/${request.id}`} variant="ghost">
-                                    {t.common.view}
-                                </ButtonLink>
-                            </td>
-                        </tr>
-                    ))}
-                </DataTable>
+            <RecordList empty={requests.data.length === 0} filtered={active.length > 0} loading="inline">
+                <DataTable
+                    caption={t.nav.requests}
+                    columns={columns}
+                    rows={requests.data}
+                    rowKey={(row) => row.id}
+                    actions={(row) => [{ key: 'view', label: t.common.view, href: `/requests/${row.id}`, inline: true }]}
+                />
+                <Pagination paginator={requests} />
             </RecordList>
-            <Pagination links={requests.links} />
         </>
     );
 }

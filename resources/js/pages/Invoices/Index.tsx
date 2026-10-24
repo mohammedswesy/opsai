@@ -1,17 +1,18 @@
-import { Button, ButtonLink } from '@/components/Button';
-import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
-import { DataTable } from '@/components/DataTable';
-import { EmptyState } from '@/components/EmptyState';
-import { FilterBar } from '@/components/FilterBar';
+import { ButtonLink } from '@/components/Button';
+import { DataTable, type Column } from '@/components/DataTable';
+import { FilterBar, activeFilters } from '@/components/FilterBar';
 import { controlClassName } from '@/components/FormField';
 import { PageHeader } from '@/components/PageHeader';
 import { Pagination } from '@/components/Pagination';
+import { RecordList } from '@/components/RecordList';
 import { SearchInput } from '@/components/SearchInput';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useI18n } from '@/i18n';
-import { optionLabel } from '@/lib/labels';
 import AppLayout from '@/layouts/AppLayout';
+import { useFormat } from '@/lib/format';
+import { optionLabel } from '@/lib/labels';
+import { INVOICE_STATUSES } from '@/lib/options';
 import type { Option, Paginator } from '@/types/page';
 
 type InvoiceRow = {
@@ -26,6 +27,8 @@ type InvoiceRow = {
     customer: { name: string } | null;
 };
 
+type Filters = { search?: string; status?: string; customer_id?: string; from?: string; to?: string; overdue?: string };
+
 export default function Index({
     invoices,
     filters,
@@ -33,11 +36,44 @@ export default function Index({
     canManage,
 }: {
     invoices: Paginator<InvoiceRow>;
-    filters: { search?: string; status?: string; customer_id?: string; from?: string; to?: string; overdue?: string };
+    filters: Filters;
     customers: Option[];
     canManage: boolean;
 }) {
     const { t } = useI18n();
+    const format = useFormat();
+    const active = activeFilters(filters, {
+        search: { label: t.common.search },
+        status: { label: t.ops.status, value: (value) => optionLabel(t.labels, value) },
+        customer_id: { label: t.ops.customer, value: (value) => customers.find((customer) => customer.id === value)?.name ?? value },
+        from: { label: t.dashboard.from, value: (value) => format.date(value) },
+        to: { label: t.dashboard.to, value: (value) => format.date(value) },
+        overdue: { label: t.dashboard.overdue, value: () => '' },
+    });
+
+    const columns: Column<InvoiceRow>[] = [
+        { key: 'number', header: t.finance.invoiceNumber, primary: true, cell: (row) => <bdi dir="ltr" className="md:whitespace-nowrap">{row.invoice_number}</bdi> },
+        { key: 'customer', header: t.ops.customer, truncate: (row) => row.customer?.name, cell: (row) => row.customer?.name ?? t.common.none },
+        { key: 'issued', header: t.finance.issueDate, cell: (row) => <span className="md:whitespace-nowrap tabular-nums">{format.date(row.issue_date)}</span> },
+        {
+            key: 'due',
+            header: t.finance.dueDate,
+            cell: (row) =>
+                row.due_date ? (
+                    <span className={`md:whitespace-nowrap tabular-nums ${row.status === 'overdue' ? 'font-medium text-danger' : ''}`}>{format.date(row.due_date)}</span>
+                ) : (
+                    <span className="text-ink-subtle">{t.common.none}</span>
+                ),
+        },
+        { key: 'total', header: t.finance.total, numeric: true, cell: (row) => format.money(row.total, row.currency) },
+        {
+            key: 'outstanding',
+            header: t.finance.outstanding,
+            numeric: true,
+            cell: (row) => <span className={Number(row.amount_due) > 0 ? 'font-semibold text-ink' : 'text-ink-muted'}>{format.money(row.amount_due, row.currency)}</span>,
+        },
+        { key: 'status', header: t.ops.status, cell: (row) => <StatusBadge value={row.status} /> },
+    ];
 
     return (
         <>
@@ -51,17 +87,16 @@ export default function Index({
                     ) : null
                 }
             />
-            <FilterBar>
-                <SearchInput defaultValue={filters.search} placeholder={t.common.search} />
-                <select className={controlClassName} name="status" defaultValue={filters.status ?? ''}>
+            <FilterBar search={<SearchInput defaultValue={filters.search} placeholder={t.common.search} />} active={active}>
+                <select className={controlClassName} name="status" defaultValue={filters.status ?? ''} aria-label={t.ops.status}>
                     <option value="">{t.ops.status}</option>
-                    {['draft', 'issued', 'partially_paid', 'paid', 'overdue', 'cancelled'].map((status) => (
+                    {INVOICE_STATUSES.map((status) => (
                         <option key={status} value={status}>
                             {optionLabel(t.labels, status)}
                         </option>
                     ))}
                 </select>
-                <select className={controlClassName} name="customer_id" defaultValue={filters.customer_id ?? ''}>
+                <select className={controlClassName} name="customer_id" defaultValue={filters.customer_id ?? ''} aria-label={t.ops.customer}>
                     <option value="">{t.ops.customer}</option>
                     {customers.map((customer) => (
                         <option key={customer.id} value={customer.id}>
@@ -71,40 +106,21 @@ export default function Index({
                 </select>
                 <input className={controlClassName} type="date" name="from" defaultValue={filters.from ?? ''} aria-label={t.dashboard.from} />
                 <input className={controlClassName} type="date" name="to" defaultValue={filters.to ?? ''} aria-label={t.dashboard.to} />
-                <label className="flex items-center gap-2 text-sm">
+                <label className="flex min-h-10 items-center gap-2 text-body text-ink-secondary">
                     <input type="checkbox" name="overdue" value="1" defaultChecked={filters.overdue === '1'} />
                     {t.dashboard.overdue}
                 </label>
-                <Button variant="primary" type="submit">
-                    {t.common.search}
-                </Button>
             </FilterBar>
-            {invoices.data.length === 0 ? (
-                <EmptyState title={t.ops.empty} />
-            ) : (
-                <DataTable headers={[t.finance.invoiceNumber, t.ops.customer, t.finance.issueDate, t.finance.total, t.finance.outstanding, t.ops.status, '']}>
-                    {invoices.data.map((invoice) => (
-                        <tr key={invoice.id} className="border-b border-zinc-100">
-                            <td className="px-4 py-3 font-medium">{invoice.invoice_number}</td>
-                            <td className="max-w-48 truncate px-4 py-3" title={invoice.customer?.name}>{invoice.customer?.name}</td>
-                            <td className="px-4 py-3">{invoice.issue_date.slice(0, 10)}</td>
-                            <td className="px-4 py-3">
-                                {invoice.total} {invoice.currency}
-                            </td>
-                            <td className={`px-4 py-3 font-semibold tabular-nums ${Number(invoice.amount_due) > 0 ? 'text-zinc-900' : 'text-zinc-500'}`}>{invoice.amount_due} {invoice.currency}</td>
-                            <td className="px-4 py-3">
-                                <StatusBadge value={invoice.status} />
-                            </td>
-                            <td className="px-4 py-3 text-end">
-                                <Link href={`/invoices/${invoice.id}`} className="text-teal-800">
-                                    {t.common.view}
-                                </Link>
-                            </td>
-                        </tr>
-                    ))}
-                </DataTable>
-            )}
-            <Pagination links={invoices.links} />
+            <RecordList empty={invoices.data.length === 0} filtered={active.length > 0} loading="inline">
+                <DataTable
+                    caption={t.nav.invoices}
+                    columns={columns}
+                    rows={invoices.data}
+                    rowKey={(row) => row.id}
+                    actions={(row) => [{ key: 'view', label: t.common.view, href: `/invoices/${row.id}`, inline: true }]}
+                />
+                <Pagination paginator={invoices} />
+            </RecordList>
         </>
     );
 }

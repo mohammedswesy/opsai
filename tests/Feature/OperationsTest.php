@@ -258,6 +258,38 @@ it('creates an internal task for a member', function () {
         ->where('organization.role', 'owner'));
 });
 
+it('keeps a task due time sent with an offset on the same instant through edit and save', function () {
+    [$owner, $organization] = createMember();
+    $organization->update(['timezone' => 'Asia/Riyadh']);
+
+    // The task form sends 09:00 Riyadh time as a UTC instant.
+    actingInOrganization($owner, $organization)->post('/tasks', [
+        'title' => 'Morning filter check',
+        'priority' => 'normal',
+        'status' => 'todo',
+        'due_at' => '2026-12-15T06:00:00.000Z',
+    ])->assertRedirect('/tasks');
+
+    $task = Task::withoutGlobalScope('organization')->where('title', 'Morning filter check')->firstOrFail();
+    expect($task->due_at->utc()->format('Y-m-d H:i'))->toBe('2026-12-15 06:00')
+        ->and($task->due_at->timezone('Asia/Riyadh')->format('H:i'))->toBe('09:00');
+
+    // The edit page hands the form a UTC instant, which the form converts back to 09:00 Riyadh.
+    actingInOrganization($owner, $organization)->get("/tasks/{$task->id}/edit")->assertOk()->assertInertia(fn ($page) => $page
+        ->component('Tasks/Form')
+        ->where('task.due_at', fn (string $value) => str_starts_with($value, '2026-12-15T06:00:00')));
+
+    // Saving the unchanged form sends the same instant back, so nothing shifts.
+    actingInOrganization($owner, $organization)->put("/tasks/{$task->id}", [
+        'title' => 'Morning filter check',
+        'priority' => 'normal',
+        'status' => 'todo',
+        'due_at' => '2026-12-15T06:00:00.000Z',
+    ])->assertRedirect('/tasks');
+
+    expect($task->fresh()->due_at->utc()->format('Y-m-d H:i'))->toBe('2026-12-15 06:00');
+});
+
 function customerId($owner, $organization): string
 {
     actingInOrganization($owner, $organization)->post('/customers', [

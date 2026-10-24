@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { useI18n } from '@/i18n';
 import { optionLabel } from '@/lib/labels';
 import AppLayout from '@/layouts/AppLayout';
+import { REQUEST_SOURCES } from '@/lib/options';
 import type { Option } from '@/types/page';
 
 type Customer = {
@@ -46,7 +47,7 @@ export default function Form({ customer, branches }: { customer: Customer | null
 
     return (
         <>
-            <PageHeader title={customer ? t.common.edit : t.ops.create} subtitle={t.nav.customers} />
+            <PageHeader parent={{ label: t.nav.customers, href: '/customers' }} title={customer ? t.common.edit : t.ops.create} subtitle={t.nav.customers} />
             <CardForm className="grid max-w-3xl gap-4 p-5 md:grid-cols-2" onSubmit={(event) => {
                     event.preventDefault();
                     const payload = { ...form.data, branch_id: form.data.branch_id || null };
@@ -100,7 +101,7 @@ export default function Form({ customer, branches }: { customer: Customer | null
                 </FormField>
                 <FormField label={t.ops.source} error={form.errors.source}>
                     <select className={controlClassName} value={form.data.source} onChange={(event) => form.setData('source', event.target.value)}>
-                        {['manual', 'whatsapp', 'website', 'phone', 'email', 'ai'].map((source) => (
+                        {REQUEST_SOURCES.map((source) => (
                             <option key={source} value={source}>
                                 {optionLabel(t.labels, source)}
                             </option>

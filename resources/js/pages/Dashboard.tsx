@@ -1,14 +1,19 @@
 import { router, usePage } from '@inertiajs/react';
 import { Building2, CalendarDays, CircleDollarSign, ClipboardList, Columns3, Inbox, ListTodo, Plus, Receipt, UserCog, Users, Wallet } from 'lucide-react';
-import { useId, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import { Avatar } from '@/components/Avatar';
 import { ButtonLink } from '@/components/Button';
-import { Card } from '@/components/Card';
 import { controlClassName } from '@/components/FormField';
-import { Initials } from '@/components/Initials';
 import { KpiCard } from '@/components/KpiCard';
+import { PageTitle } from '@/components/PageTitle';
+import { Section } from '@/components/Section';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useI18n } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout';
+import { useFormat } from '@/lib/format';
+import { useNavHidden } from '@/lib/navigation';
+import { useCan } from '@/lib/permissions';
+import { fill } from '@/lib/text';
 import type { Option } from '@/types/page';
 
 type Metrics = {
@@ -37,56 +42,7 @@ type Finance = {
     invoice_status: { status: string; count: number }[];
 };
 
-const avatarTones = [
-    'bg-blue-50 text-blue-700',
-    'bg-indigo-50 text-indigo-700',
-    'bg-sky-50 text-sky-700',
-    'bg-emerald-50 text-emerald-700',
-    'bg-violet-50 text-violet-700',
-    'bg-amber-50 text-amber-800',
-];
-
-function can(permissions: string[], permission: string): boolean {
-    return permissions.includes('*') || permissions.includes(permission);
-}
-
-function fill(template: string, values: Record<string, number>): string {
-    return Object.entries(values).reduce((text, [key, value]) => text.replaceAll(`{${key}}`, String(value)), template);
-}
-
-function calendarDate(iso: string): Date | null {
-    const [year, month, day] = iso.slice(0, 10).split('-').map(Number);
-
-    if (!year || !month || !day) {
-        return null;
-    }
-
-    return new Date(year, month - 1, day);
-}
-
-function formatDate(iso: string, locale: string, withYear = true): string {
-    const date = calendarDate(iso);
-
-    if (!date) {
-        return iso.slice(0, 10);
-    }
-
-    return new Intl.DateTimeFormat(locale === 'ar' ? 'ar' : 'en', withYear ? { day: 'numeric', month: 'short', year: 'numeric' } : { day: 'numeric', month: 'short' }).format(date);
-}
-
-function money(amount: string, currency: string, locale: string): string {
-    const value = Number(amount);
-
-    if (!Number.isFinite(value)) {
-        return `${amount} ${currency}`;
-    }
-
-    try {
-        return new Intl.NumberFormat(locale === 'ar' ? 'ar-SA' : 'en', { style: 'currency', currency, maximumFractionDigits: 2 }).format(value);
-    } catch {
-        return `${amount} ${currency}`;
-    }
-}
+type ChartRow = { key: string; date: string; value: number };
 
 function greetingKey(hour: number): 'goodMorning' | 'goodAfternoon' | 'goodEvening' {
     if (hour < 12) {
@@ -112,18 +68,22 @@ export default function Dashboard({
     filters: { branch_id?: string; from?: string; to?: string };
 }) {
     const { t, locale } = useI18n();
-    const { auth, permissions } = usePage().props;
+    const { auth } = usePage().props;
+    const can = useCan();
+    const navHidden = useNavHidden();
+    const format = useFormat();
     const hour = new Date().getHours();
     const name = auth.user?.name ?? '';
-    const today = new Intl.DateTimeFormat(locale === 'ar' ? 'ar' : 'en', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
+    const today = format.date(new Date(), 'long');
     const waiting = metrics.open_requests + metrics.pending_tasks;
-    const summary = waiting === 0 && metrics.todays_appointments === 0 && metrics.active_work_orders === 0
-        ? t.dashboard.summaryQuiet
-        : fill(t.dashboard.summary, {
-            requests: metrics.open_requests,
-            appointments: metrics.todays_appointments,
-            jobs: metrics.active_work_orders,
-        });
+    const summary =
+        waiting === 0 && metrics.todays_appointments === 0 && metrics.active_work_orders === 0
+            ? t.dashboard.summaryQuiet
+            : fill(t.dashboard.summary, {
+                  requests: metrics.open_requests,
+                  appointments: metrics.todays_appointments,
+                  jobs: metrics.active_work_orders,
+              });
     const maxLoad = Math.max(1, ...metrics.technician_workload.map((row) => row.count));
     const maxOrders = Math.max(1, ...metrics.work_orders_by_status.map((row) => row.count));
     const maxStatus = Math.max(1, ...(finance?.invoice_status.map((row) => row.count) ?? [1]));
@@ -131,8 +91,10 @@ export default function Dashboard({
     const ordersEmpty = metrics.work_orders_by_status.every((row) => row.count === 0);
     const financeDaysEmpty = finance?.by_day.every((day) => Number(day.revenue) === 0 && Number(day.payments) === 0) ?? true;
     const invoiceStatusEmpty = finance?.invoice_status.every((row) => row.count === 0) ?? true;
-    const canRequest = can(permissions, 'requests.manage');
-    const canDispatch = can(permissions, 'appointments.view') || can(permissions, 'work_orders.view');
+    // Shortcuts follow both permissions and the role's navigation, so nobody is sent to a section their sidebar hides.
+    const canRequest = can('requests.manage') && !navHidden('/requests');
+    const canDispatch = (can('appointments.view') || can('work_orders.view')) && !navHidden('/dispatch');
+    const overdueTone = finance && Number(finance.overdue) > 0 ? 'danger' : 'success';
 
     function apply(next: { branch_id?: string; from?: string; to?: string }) {
         router.get('/', { ...filters, ...next }, { preserveState: true });
@@ -140,255 +102,264 @@ export default function Dashboard({
 
     return (
         <div className="space-y-6">
+            <PageTitle title={t.nav.dashboard} />
             <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div className="min-w-0">
-                    <p className="text-xs font-medium tracking-wide text-zinc-400 uppercase">{today}</p>
-                    <h1 dir="auto" className="mt-1 truncate text-[26px] leading-8 font-semibold tracking-tight text-zinc-900">
-                        {t.dashboard[greetingKey(hour)]}{locale === 'ar' ? '، ' : ', '}{name}
+                    <p className="text-caption font-medium text-ink-muted ltr:tracking-wide ltr:uppercase">{today}</p>
+                    <h1 className="mt-1 text-title font-semibold tracking-tight break-words text-ink">
+                        {t.dashboard[greetingKey(hour)]}
+                        {locale === 'ar' ? '، ' : ', '}
+                        <bdi>{name}</bdi>
                     </h1>
-                    <p className="mt-2 max-w-2xl text-sm text-zinc-600">{summary}</p>
+                    <p className="mt-2 max-w-2xl text-body text-ink-secondary">{summary}</p>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                    {canRequest ? (
-                        <ButtonLink href="/requests/create">
-                            <Plus className="size-4" strokeWidth={1.75} />
-                            {t.dashboard.newRequest}
-                        </ButtonLink>
-                    ) : null}
-                    {canDispatch ? (
-                        <ButtonLink href="/dispatch" variant="secondary">
-                            <Columns3 className="size-4" strokeWidth={1.75} />
-                            {t.dashboard.openDispatch}
-                        </ButtonLink>
-                    ) : null}
-                </div>
+                {canRequest || canDispatch ? (
+                    <div className="flex flex-wrap gap-2">
+                        {canRequest ? (
+                            <ButtonLink href="/requests/create">
+                                <Plus className="size-4" strokeWidth={1.75} aria-hidden="true" />
+                                {t.dashboard.newRequest}
+                            </ButtonLink>
+                        ) : null}
+                        {canDispatch ? (
+                            <ButtonLink href="/dispatch" variant="secondary">
+                                <Columns3 className="size-4" strokeWidth={1.75} aria-hidden="true" />
+                                {t.dashboard.openDispatch}
+                            </ButtonLink>
+                        ) : null}
+                    </div>
+                ) : null}
             </header>
 
-            <form className="flex flex-wrap items-end gap-3 rounded-2xl border border-zinc-200/70 bg-white/80 px-4 py-3">
-                    <label className="block min-w-48 flex-1">
-                        <span className="mb-1.5 block text-xs font-medium text-zinc-500">{t.dashboard.allBranches}</span>
-                        <select
-                            className={controlClassName}
-                            name="branch_id"
-                            defaultValue={filters.branch_id ?? ''}
-                            aria-label={t.dashboard.allBranches}
-                            onChange={(event) => apply({ branch_id: event.target.value })}
-                        >
-                            <option value="">{t.dashboard.allBranches}</option>
-                            {branches.map((branch) => (
-                                <option key={branch.id} value={branch.id}>{branch.name}</option>
-                            ))}
-                        </select>
-                    </label>
-                    <DateField label={t.dashboard.from} value={filters.from ?? ''} locale={locale} placeholder={t.dashboard.pickDate} onChange={(from) => apply({ from })} />
-                    <DateField label={t.dashboard.to} value={filters.to ?? ''} locale={locale} placeholder={t.dashboard.pickDate} onChange={(to) => apply({ to })} />
-                </form>
+            <form className="flex flex-wrap items-end gap-3 rounded-card border border-line bg-surface px-4 py-3 shadow-card">
+                <label className="block min-w-48 flex-1">
+                    <span className="mb-1.5 block text-caption font-medium text-ink-muted">{t.dashboard.allBranches}</span>
+                    <select className={controlClassName} name="branch_id" defaultValue={filters.branch_id ?? ''} onChange={(event) => apply({ branch_id: event.target.value })}>
+                        <option value="">{t.dashboard.allBranches}</option>
+                        {branches.map((branch) => (
+                            <option key={branch.id} value={branch.id}>
+                                {branch.name}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+                <DateField label={t.dashboard.from} value={filters.from ?? ''} placeholder={t.dashboard.pickDate} onChange={(from) => apply({ from })} />
+                <DateField label={t.dashboard.to} value={filters.to ?? ''} placeholder={t.dashboard.pickDate} onChange={(to) => apply({ to })} />
+            </form>
 
             <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <KpiCard icon={CalendarDays} tone="info" label={t.dashboard.todaysAppointments} value={metrics.todays_appointments} />
-                <KpiCard icon={Inbox} tone="warning" label={t.dashboard.openRequests} value={metrics.open_requests} />
-                <KpiCard icon={ListTodo} tone="warning" label={t.dashboard.pendingTasks} value={metrics.pending_tasks} />
+                <KpiCard icon={Inbox} tone={metrics.open_requests > 0 ? 'warning' : 'success'} label={t.dashboard.openRequests} value={metrics.open_requests} />
                 <KpiCard icon={ClipboardList} label={t.dashboard.activeWorkOrders} value={metrics.active_work_orders} />
+                {finance ? (
+                    <KpiCard icon={CircleDollarSign} tone={overdueTone} label={t.dashboard.overdueInvoices} value={format.money(finance.overdue, finance.currency)} />
+                ) : (
+                    <KpiCard icon={ListTodo} tone={metrics.pending_tasks > 0 ? 'warning' : 'success'} label={t.dashboard.pendingTasks} value={metrics.pending_tasks} />
+                )}
             </section>
 
             <section className="grid gap-3 lg:grid-cols-[18rem_minmax(0,1fr)]">
-                <Card className="flex flex-col p-5">
-                    <h2 className="text-[15px] leading-5 font-semibold text-zinc-900">{t.dashboard.todayOverview}</h2>
-                    <div className="mt-6 space-y-6">
-                        <Ring label={t.dashboard.completedWorkOrders} value={metrics.completed_work_orders} total={metrics.completed_work_orders + metrics.active_work_orders} />
-                        <Ring label={t.dashboard.activeWorkOrders} value={metrics.active_work_orders} total={metrics.completed_work_orders + metrics.active_work_orders} />
+                <Section title={t.dashboard.todayOverview}>
+                    <div className="space-y-5">
+                        <Ring label={t.dashboard.completedWorkOrders} value={metrics.completed_work_orders} total={metrics.completed_work_orders + metrics.active_work_orders} tone="success" />
+                        <Ring label={t.dashboard.activeWorkOrders} value={metrics.active_work_orders} total={metrics.completed_work_orders + metrics.active_work_orders} tone="brand" />
                     </div>
-                    <p className="mt-auto border-t border-zinc-100 pt-4 text-sm text-zinc-500">
-                        <span className="font-semibold text-zinc-900 tabular-nums">{metrics.todays_appointments}</span>
-                        <span className="ms-2">{t.dashboard.todaysAppointments}</span>
-                    </p>
-                </Card>
-                <Card className="p-5">
-                    <h2 className="text-[15px] leading-5 font-semibold text-zinc-900">{t.dashboard.technicianWorkload}</h2>
+                </Section>
+                <Section title={t.dashboard.technicianWorkload} description={t.dashboard.workloadHint}>
                     {metrics.technician_workload.length === 0 ? (
-                        <p className="mt-6 text-sm text-zinc-500">{t.ops.empty}</p>
+                        <p className="text-body text-ink-muted">{t.ops.empty}</p>
                     ) : (
-                        <ul className="mt-4 space-y-3">
-                            {metrics.technician_workload.map((row) => {
-                                const hash = [...row.name].reduce((sum, char) => sum + char.charCodeAt(0), 0);
-
-                                return (
-                                    <li key={row.name} className="flex items-center gap-3">
-                                        <Initials name={row.name} className={avatarTones[hash % avatarTones.length]} />
-                                        <span dir="auto" className="w-36 truncate text-sm text-zinc-700 sm:w-44" title={row.name}>{row.name}</span>
-                                        <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-zinc-100">
-                                            <div className="h-1.5 rounded-full bg-blue-600" style={{ width: `${Math.max(row.count === 0 ? 0 : 4, (row.count / maxLoad) * 100)}%` }} />
-                                        </div>
-                                        <span className="w-6 text-end text-sm font-medium text-zinc-700 tabular-nums">{row.count}</span>
-                                    </li>
-                                );
-                            })}
-                        </ul>
-                    )}
-                </Card>
-            </section>
-
-            <section className="grid gap-3 lg:grid-cols-3">
-                <Card className="p-5 lg:col-span-2">
-                    <h2 className="text-[15px] leading-5 font-semibold text-zinc-900">{t.dashboard.requestsByDay}</h2>
-                    {requestsEmpty ? <p className="mt-8 text-sm text-zinc-500">{t.dashboard.emptyChart}</p> : (
-                        <ColumnChart rows={metrics.requests_by_day.map((day) => ({ key: day.date, date: day.date, value: day.count, title: `${formatDate(day.date, locale)} · ${day.count}` }))} locale={locale} />
-                    )}
-                </Card>
-                <Card className="p-5">
-                    <h2 className="text-[15px] leading-5 font-semibold text-zinc-900">{t.dashboard.workOrdersByStatus}</h2>
-                    {ordersEmpty ? <p className="mt-8 text-sm text-zinc-500">{t.dashboard.emptyChart}</p> : (
-                        <ul className="mt-4 space-y-3">
-                            {metrics.work_orders_by_status.filter((row) => row.count > 0).map((row) => (
-                                <li key={row.status}>
-                                    <div className="mb-1.5 flex items-center justify-between gap-3">
-                                        <StatusBadge value={row.status} />
-                                        <span className="text-xs font-medium text-zinc-600 tabular-nums">{row.count}</span>
-                                    </div>
-                                    <div className="h-1.5 rounded-full bg-zinc-100">
-                                        <div className="h-1.5 rounded-full bg-blue-600" style={{ width: `${(row.count / maxOrders) * 100}%` }} />
-                                    </div>
+                        <ul className="space-y-3">
+                            {metrics.technician_workload.map((row) => (
+                                <li key={row.name} className="flex items-center gap-3">
+                                    <Avatar name={row.name} size="sm" />
+                                    <span dir="auto" className="w-36 truncate text-body text-ink-secondary sm:w-44" title={row.name}>
+                                        {row.name}
+                                    </span>
+                                    <span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-badge bg-surface-muted" aria-hidden="true">
+                                        <span className="block h-full rounded-badge bg-brand" style={{ width: `${row.count === 0 ? 0 : Math.max(4, (row.count / maxLoad) * 100)}%` }} />
+                                    </span>
+                                    <span className="w-8 text-end text-body font-medium text-ink tabular-nums">{format.number(row.count)}</span>
                                 </li>
                             ))}
                         </ul>
                     )}
-                </Card>
+                </Section>
+            </section>
+
+            <section className="grid gap-3 lg:grid-cols-3">
+                <Section title={t.dashboard.requestsByDay} className="lg:col-span-2">
+                    {requestsEmpty ? (
+                        <p className="text-body text-ink-muted">{t.dashboard.emptyChart}</p>
+                    ) : (
+                        <ColumnChart
+                            title={t.dashboard.requestsByDay}
+                            tone="brand"
+                            rows={metrics.requests_by_day.map((day) => ({ key: day.date, date: day.date, value: day.count }))}
+                            formatValue={(value) => format.number(value)}
+                        />
+                    )}
+                </Section>
+                <Section title={t.dashboard.workOrdersByStatus}>
+                    {ordersEmpty ? (
+                        <p className="text-body text-ink-muted">{t.dashboard.emptyChart}</p>
+                    ) : (
+                        <StatusBars rows={metrics.work_orders_by_status} max={maxOrders} tone="brand" />
+                    )}
+                </Section>
             </section>
 
             {finance ? (
                 <section className="space-y-3" data-testid="finance-metrics">
-                    <h2 className="text-[15px] leading-5 font-semibold text-zinc-900">{t.nav.finance}</h2>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                        <KpiCard icon={Receipt} tone="warning" label={t.dashboard.outstanding} value={money(finance.outstanding, finance.currency, locale)} />
-                        <KpiCard icon={CircleDollarSign} tone="danger" label={t.dashboard.overdue} value={money(finance.overdue, finance.currency, locale)} />
-                    </div>
+                    <h2 className="text-heading font-semibold text-ink">{t.dashboard.financeTitle}</h2>
                     <div className="grid gap-3 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.8fr)]">
-                    <Card className="p-5">
-                        <div className="mb-1 flex items-baseline justify-between gap-3">
-                            <h3 className="text-[15px] leading-5 font-semibold text-zinc-900">{t.dashboard.revenueByDay}</h3>
-                            <p className="text-sm font-medium text-zinc-700 tabular-nums">{money(finance.revenue, finance.currency, locale)}</p>
-                        </div>
-                        {financeDaysEmpty ? <p className="mt-8 text-sm text-zinc-500">{t.dashboard.emptyChart}</p> : (
-                            <ColumnChart
-                                gradient
-                                rows={finance.by_day.map((day) => ({
-                                    key: day.date,
-                                    date: day.date,
-                                    value: Number(day.revenue),
-                                    title: `${formatDate(day.date, locale)} · ${money(day.revenue, finance.currency, locale)}`,
-                                }))}
-                                locale={locale}
-                            />
-                        )}
-                    </Card>
-                    <Card className="p-5">
-                        <h3 className="text-[15px] leading-5 font-semibold text-zinc-900">{t.dashboard.invoiceStatus}</h3>
-                        {invoiceStatusEmpty ? <p className="mt-6 text-sm text-zinc-500">{t.dashboard.emptyChart}</p> : (
-                            <ul className="mt-4 space-y-3">
-                                {finance.invoice_status.filter((row) => row.count > 0).map((row) => (
-                                    <li key={row.status}>
-                                        <div className="mb-1.5 flex items-center justify-between gap-3">
-                                            <StatusBadge value={row.status} />
-                                            <span className="text-xs font-medium text-zinc-600 tabular-nums">{row.count}</span>
-                                        </div>
-                                        <div className="h-1.5 rounded-full bg-zinc-100">
-                                            <div className="h-1.5 rounded-full bg-indigo-500" style={{ width: `${(row.count / maxStatus) * 100}%` }} />
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </Card>
+                        <Section title={t.dashboard.revenueByDay} action={<span className="text-body font-medium text-ink tabular-nums">{format.money(finance.revenue, finance.currency)}</span>}>
+                            {financeDaysEmpty ? (
+                                <p className="text-body text-ink-muted">{t.dashboard.emptyChart}</p>
+                            ) : (
+                                <ColumnChart
+                                    title={t.dashboard.revenueByDay}
+                                    tone="info"
+                                    rows={finance.by_day.map((day) => ({ key: day.date, date: day.date, value: Number(day.revenue) }))}
+                                    formatValue={(value) => format.money(value, finance.currency)}
+                                />
+                            )}
+                        </Section>
+                        <Section title={t.dashboard.invoiceStatus}>
+                            {invoiceStatusEmpty ? <p className="text-body text-ink-muted">{t.dashboard.emptyChart}</p> : <StatusBars rows={finance.invoice_status} max={maxStatus} tone="info" />}
+                        </Section>
                     </div>
-                    <div className="grid gap-3 sm:grid-cols-3">
-                        <KpiCard size="quiet" icon={Receipt} label={t.dashboard.invoiced} value={money(finance.invoiced, finance.currency, locale)} />
-                        <KpiCard size="quiet" icon={Wallet} tone="success" label={t.dashboard.paid} value={money(finance.paid, finance.currency, locale)} />
-                        <KpiCard size="quiet" icon={Wallet} tone="info" label={t.dashboard.todaysPayments} value={money(finance.todays_payments, finance.currency, locale)} />
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <KpiCard size="quiet" icon={Receipt} tone="warning" label={t.dashboard.outstanding} value={format.money(finance.outstanding, finance.currency)} />
+                        <KpiCard size="quiet" icon={Receipt} label={t.dashboard.invoiced} value={format.money(finance.invoiced, finance.currency)} />
+                        <KpiCard size="quiet" icon={Wallet} tone="success" label={t.dashboard.paid} value={format.money(finance.paid, finance.currency)} />
+                        <KpiCard size="quiet" icon={Wallet} tone="info" label={t.dashboard.todaysPayments} value={format.money(finance.todays_payments, finance.currency)} />
                     </div>
                 </section>
             ) : null}
 
             <section>
-                <h2 className="mb-3 text-xs font-semibold tracking-wide text-zinc-400 uppercase">{t.dashboard.secondary}</h2>
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <h2 className="mb-3 text-caption font-semibold text-ink-muted ltr:tracking-wide ltr:uppercase">{t.dashboard.secondary}</h2>
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                    {finance ? <KpiCard size="quiet" icon={ListTodo} tone="warning" label={t.dashboard.pendingTasks} value={metrics.pending_tasks} /> : null}
+                    <KpiCard size="quiet" icon={ClipboardList} tone="success" label={t.dashboard.completedWorkOrders} value={metrics.completed_work_orders} />
+                    <KpiCard size="quiet" icon={UserCog} tone="success" label={t.dashboard.availableTechnicians} value={metrics.available_technicians} />
                     <KpiCard size="quiet" icon={Building2} label={t.dashboard.branches} value={metrics.branches} />
                     <KpiCard size="quiet" icon={Users} label={t.dashboard.members} value={metrics.members} />
-                    <KpiCard size="quiet" icon={UserCog} tone="success" label={t.dashboard.availableTechnicians} value={metrics.available_technicians} />
-                    <KpiCard size="quiet" icon={ClipboardList} tone="success" label={t.dashboard.completedWorkOrders} value={metrics.completed_work_orders} />
                 </div>
             </section>
         </div>
     );
 }
 
-function DateField({ label, value, locale, placeholder, onChange }: { label: string; value: string; locale: string; placeholder: string; onChange: (value: string) => void }) {
+function DateField({ label, value, placeholder, onChange }: { label: string; value: string; placeholder: string; onChange: (value: string) => void }) {
+    const format = useFormat();
+
     return (
         <label className="block min-w-44">
-            <span className="mb-1.5 block text-xs font-medium text-zinc-500">{label}</span>
+            <span className="mb-1.5 block text-caption font-medium text-ink-muted">{label}</span>
             <span className="relative block">
-                <input
-                    className={`${controlClassName} date-mask`}
-                    type="date"
-                    aria-label={label}
-                    defaultValue={value}
-                    onChange={(event) => onChange(event.target.value)}
-                />
-                <span className="pointer-events-none absolute inset-y-0 start-3 end-9 flex items-center truncate text-sm text-zinc-800">
-                    {value ? formatDate(value, locale) : <span className="text-zinc-400">{placeholder}</span>}
+                <input className={`${controlClassName} date-mask`} type="date" aria-label={label} defaultValue={value} onChange={(event) => onChange(event.target.value)} />
+                <span className="pointer-events-none absolute inset-y-0 start-3 end-9 flex items-center truncate text-body text-ink">
+                    {value ? format.date(value) : <span className="text-ink-subtle">{placeholder}</span>}
                 </span>
             </span>
         </label>
     );
 }
 
-function ColumnChart({ rows, locale, gradient = false }: { rows: { key: string; date: string; value: number; title: string }[]; locale: string; gradient?: boolean }) {
-    const max = Math.max(1, ...rows.map((row) => row.value));
-    const gradientId = useId().replace(/:/g, '');
+const barTones = { brand: 'bg-brand', info: 'bg-info', success: 'bg-success' };
+const fillTones = { brand: 'fill-brand', info: 'fill-info' };
+
+function StatusBars({ rows, max, tone }: { rows: { status: string; count: number }[]; max: number; tone: keyof typeof barTones }) {
+    const format = useFormat();
 
     return (
-        <div className="mt-5">
-            <svg viewBox="0 0 100 36" className="h-36 w-full overflow-visible" role="img">
-                {gradient ? (
-                    <defs>
-                        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#60A5FA" />
-                            <stop offset="100%" stopColor="#2563EB" />
-                        </linearGradient>
-                    </defs>
-                ) : null}
-                {[12, 24].map((line) => (
-                    <line key={line} x1="0" x2="100" y1={line} y2={line} stroke="#e8eef6" strokeWidth="0.35" />
+        <ul className="space-y-3">
+            {rows
+                .filter((row) => row.count > 0)
+                .map((row) => (
+                    <li key={row.status}>
+                        <div className="mb-1.5 flex items-center justify-between gap-3">
+                            <StatusBadge value={row.status} />
+                            <span className="text-caption font-medium text-ink-secondary tabular-nums">{format.number(row.count)}</span>
+                        </div>
+                        <span className="block h-1.5 overflow-hidden rounded-badge bg-surface-muted" aria-hidden="true">
+                            <span className={`block h-full rounded-badge ${barTones[tone]}`} style={{ width: `${(row.count / max) * 100}%` }} />
+                        </span>
+                    </li>
                 ))}
-                <line x1="0" x2="100" y1="34" y2="34" stroke="#e2e8f0" strokeWidth="0.35" />
+        </ul>
+    );
+}
+
+/**
+ * Daily column chart. Bars run in reading order (oldest at the start edge), so the SVG
+ * is mirrored in RTL to stay aligned with the date labels underneath. Screen readers
+ * get a one-line summary plus a hidden table of every day instead of the drawing.
+ */
+function ColumnChart({ title, rows, tone, formatValue }: { title: string; rows: ChartRow[]; tone: keyof typeof fillTones; formatValue: (value: number) => string }) {
+    const { t, dir } = useI18n();
+    const format = useFormat();
+    const max = Math.max(1, ...rows.map((row) => row.value));
+    const peak = rows.reduce((best, row) => (row.value > best.value ? row : best), rows[0]);
+    const total = rows.reduce((sum, row) => sum + row.value, 0);
+    const summary = fill(t.dashboard.chartSummary, { total: formatValue(total), peak: formatValue(peak.value), date: format.date(peak.date) });
+    const slot = 100 / rows.length;
+
+    return (
+        <figure className="mt-1">
+            <figcaption className="text-caption text-ink-muted">{summary}</figcaption>
+            <svg viewBox="0 0 100 36" className="mt-3 h-36 w-full overflow-visible" aria-hidden="true" preserveAspectRatio="none">
+                {[12, 24].map((line) => (
+                    <line key={line} x1="0" x2="100" y1={line} y2={line} className="stroke-line" strokeWidth="0.35" />
+                ))}
+                <line x1="0" x2="100" y1="34" y2="34" className="stroke-line-strong" strokeWidth="0.35" />
                 {rows.map((row, index) => {
                     if (row.value <= 0) {
                         return null;
                     }
 
-                    const slot = 100 / rows.length;
                     const height = Math.max(1.6, (row.value / max) * 30);
                     const width = slot * 0.62;
-                    const x = index * slot + (slot - width) / 2;
+                    const start = index * slot + (slot - width) / 2;
+                    const x = dir === 'rtl' ? 100 - start - width : start;
 
-                    return (
-                        <rect key={row.key} x={x} y={34 - height} width={width} height={height} rx="1.1" fill={gradient ? `url(#${gradientId})` : '#2563EB'}>
-                            <title>{row.title}</title>
-                        </rect>
-                    );
+                    return <rect key={row.key} x={x} y={34 - height} width={width} height={height} rx="1.1" className={fillTones[tone]} />;
                 })}
             </svg>
-            <div className="mt-2 flex">
+            <div className="mt-2 flex" aria-hidden="true">
                 {rows.map((row, index) => (
-                    <span key={row.key} className="min-w-0 flex-1 truncate text-center text-[10px] text-zinc-400 tabular-nums" title={row.title}>
-                        {index % 2 === 0 ? formatDate(row.date, locale, false) : ''}
+                    <span key={row.key} className="min-w-0 flex-1 truncate text-center text-micro text-ink-muted tabular-nums" title={`${format.date(row.date)} · ${formatValue(row.value)}`}>
+                        {index % 2 === 0 ? format.date(row.date, 'short') : ''}
                     </span>
                 ))}
             </div>
-        </div>
+            <table className="sr-only">
+                <caption>{title}</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">{t.dashboard.chartDate}</th>
+                        <th scope="col">{t.dashboard.chartValue}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows.map((row) => (
+                        <tr key={row.key}>
+                            <td>{format.date(row.date)}</td>
+                            <td>{formatValue(row.value)}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </figure>
     );
 }
 
-function Ring({ label, value, total }: { label: string; value: number; total: number }) {
+const ringTones = { brand: 'stroke-brand', success: 'stroke-success' };
+
+function Ring({ label, value, total, tone }: { label: string; value: number; total: number; tone: keyof typeof ringTones }) {
+    const format = useFormat();
     const percent = total === 0 ? 0 : Math.min(100, Math.round((value / total) * 100));
     const radius = 28;
     const circumference = 2 * Math.PI * radius;
@@ -397,13 +368,17 @@ function Ring({ label, value, total }: { label: string; value: number; total: nu
     return (
         <div className="flex items-center gap-4">
             <svg viewBox="0 0 80 80" className="size-[72px] shrink-0" aria-hidden="true">
-                <circle cx="40" cy="40" r={radius} className="fill-none stroke-zinc-100" strokeWidth="8" />
-                <circle cx="40" cy="40" r={radius} className="fill-none stroke-blue-600" strokeWidth="8" strokeLinecap="round" strokeDasharray={`${dash} ${circumference - dash}`} transform="rotate(-90 40 40)" />
-                <text x="40" y="44" textAnchor="middle" className="fill-zinc-900 text-[13px] font-semibold tabular-nums">{percent}%</text>
+                <circle cx="40" cy="40" r={radius} className="fill-none stroke-surface-muted" strokeWidth="8" />
+                {dash > 0 ? <circle cx="40" cy="40" r={radius} className={`fill-none ${ringTones[tone]}`} strokeWidth="8" strokeLinecap="round" strokeDasharray={`${dash} ${circumference - dash}`} transform="rotate(-90 40 40)" /> : null}
+                <text x="40" y="44" textAnchor="middle" className="fill-ink text-caption font-semibold tabular-nums">
+                    {format.number(percent)}%
+                </text>
             </svg>
             <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-zinc-900">{label}</p>
-                <p className="text-xs text-zinc-500 tabular-nums">{value}/{total}</p>
+                <p className="truncate text-body font-medium text-ink">{label}</p>
+                <p className="text-caption text-ink-muted tabular-nums">
+                    {format.number(value)}/{format.number(total)}
+                </p>
             </div>
         </div>
     );

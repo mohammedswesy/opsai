@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { PageHeader } from '@/components/PageHeader';
 import { useI18n } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout';
+import { optionLabel } from '@/lib/labels';
 
 type Membership = {
     id: string;
@@ -27,7 +28,7 @@ export default function OrganizationsIndex({ organizations }: { organizations: M
                         <div>
                             <h2 className="font-medium">{organization.name}</h2>
                             <p className="text-sm text-zinc-500">
-                                {organization.role} · {organization.country} · {organization.status}
+                                {optionLabel(t.labels, organization.role)} · {organization.country} · {optionLabel(t.labels, organization.status)}
                             </p>
                         </div>
                         <Button variant="primary" type="button"
