@@ -471,7 +471,7 @@ export default function Index({ board }: { board: Board }) {
                     <input className={`${controlClassName} max-w-xs`} value={search} placeholder={t.dispatch.search} aria-label={t.dispatch.search} onChange={(event) => setSearch(event.target.value)} />
                 </div>
             </Card>
-            <RecordList empty={filteredEmpty}>
+            <RecordList empty={filteredEmpty} filtered>
                 <div className="grid items-start gap-4 xl:grid-cols-[18rem_minmax(0,1fr)]">
                     <Card className="p-4 shadow-sm">
                         <div className="mb-3 flex items-center justify-between gap-2">

@@ -1,17 +1,20 @@
-import { Button, ButtonLink } from '@/components/Button';
-import { Link, router } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { useState, type ReactNode } from 'react';
+import { ButtonLink } from '@/components/Button';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { DataTable } from '@/components/DataTable';
-import { EmptyState } from '@/components/EmptyState';
-import { FilterBar } from '@/components/FilterBar';
+import { DataTable, type Column } from '@/components/DataTable';
+import { FilterBar, activeFilters } from '@/components/FilterBar';
+import { controlClassName } from '@/components/FormField';
 import { PageHeader } from '@/components/PageHeader';
 import { Pagination } from '@/components/Pagination';
+import { RecordList } from '@/components/RecordList';
 import { SearchInput } from '@/components/SearchInput';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useI18n } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout';
 import { useFormat } from '@/lib/format';
+import { optionLabel } from '@/lib/labels';
+import { RECORD_STATUSES } from '@/lib/options';
 import type { Paginator } from '@/types/page';
 
 type ServiceRow = {
@@ -23,18 +26,25 @@ type ServiceRow = {
     status: string;
 };
 
-export default function Index({
-    services,
-    filters,
-    canManage,
-}: {
-    services: Paginator<ServiceRow>;
-    filters: { search?: string; status?: string; category?: string };
-    canManage: boolean;
-}) {
+type Filters = { search?: string; status?: string; category?: string };
+
+export default function Index({ services, filters, canManage }: { services: Paginator<ServiceRow>; filters: Filters; canManage: boolean }) {
     const { t } = useI18n();
     const format = useFormat();
     const [archiveId, setArchiveId] = useState<string | null>(null);
+    const active = activeFilters(filters, {
+        search: { label: t.common.search },
+        category: { label: t.ops.category },
+        status: { label: t.ops.status, value: (value) => optionLabel(t.labels, value) },
+    });
+
+    const columns: Column<ServiceRow>[] = [
+        { key: 'name', header: t.ops.service, primary: true, truncate: (row) => row.name, cell: (row) => row.name },
+        { key: 'category', header: t.ops.category, truncate: (row) => row.category, cell: (row) => row.category ?? t.common.none },
+        { key: 'price', header: t.ops.price, numeric: true, cell: (row) => (row.base_price !== null ? format.money(row.base_price) : t.common.none) },
+        { key: 'duration', header: t.ops.estimatedDuration, numeric: true, cell: (row) => (row.estimated_duration !== null ? format.duration(row.estimated_duration) : t.common.none) },
+        { key: 'status', header: t.ops.status, cell: (row) => <StatusBadge value={row.status} /> },
+    ];
 
     return (
         <>
@@ -48,48 +58,34 @@ export default function Index({
                     ) : null
                 }
             />
-            <FilterBar>
-                <SearchInput defaultValue={filters.search} placeholder={t.common.search} />
-                <SearchInput name="category" defaultValue={filters.category} placeholder={t.ops.category} />
-                <select className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm" name="status" defaultValue={filters.status ?? ''}>
+            <FilterBar search={<SearchInput defaultValue={filters.search} placeholder={t.common.search} />} active={active}>
+                <input className={controlClassName} name="category" defaultValue={filters.category ?? ''} placeholder={t.ops.category} aria-label={t.ops.category} />
+                <select className={controlClassName} name="status" defaultValue={filters.status ?? ''} aria-label={t.ops.status}>
                     <option value="">{t.ops.status}</option>
-                    <option value="active">{t.labels.active}</option>
-                    <option value="inactive">{t.labels.inactive}</option>
-                </select>
-                <Button variant="primary" type="submit">
-                    {t.common.search}
-                </Button>
-            </FilterBar>
-            {services.data.length === 0 ? (
-                <EmptyState title={t.ops.empty} />
-            ) : (
-                <DataTable headers={[t.ops.service, t.ops.category, t.ops.price, t.ops.estimatedDuration, t.ops.status, '']}>
-                    {services.data.map((service) => (
-                        <tr key={service.id} className="border-b border-zinc-100">
-                            <td className="px-4 py-3 font-medium">{service.name}</td>
-                            <td className="px-4 py-3">{service.category ?? t.common.none}</td>
-                            <td className="px-4 py-3 tabular-nums">{service.base_price !== null ? format.money(service.base_price) : t.common.none}</td>
-                            <td className="px-4 py-3 tabular-nums">{service.estimated_duration !== null ? format.duration(service.estimated_duration) : t.common.none}</td>
-                            <td className="px-4 py-3">
-                                <StatusBadge value={service.status} />
-                            </td>
-                            <td className="px-4 py-3 text-end">
-                                {canManage ? (
-                                    <>
-                                        <Link href={`/services/${service.id}/edit`} className="text-teal-800">
-                                            {t.common.edit}
-                                        </Link>
-                                        <Button variant="ghost" onClick={() => setArchiveId(service.id)}>
-                                            {t.common.archive}
-                                        </Button>
-                                    </>
-                                ) : null}
-                            </td>
-                        </tr>
+                    {RECORD_STATUSES.map((value) => (
+                        <option key={value} value={value}>
+                            {optionLabel(t.labels, value)}
+                        </option>
                     ))}
-                </DataTable>
-            )}
-            <Pagination links={services.links} />
+                </select>
+            </FilterBar>
+            <RecordList empty={services.data.length === 0} filtered={active.length > 0} loading="inline">
+                <DataTable
+                    caption={t.nav.services}
+                    columns={columns}
+                    rows={services.data}
+                    rowKey={(row) => row.id}
+                    actions={
+                        canManage
+                            ? (row) => [
+                                  { key: 'edit', label: t.common.edit, href: `/services/${row.id}/edit`, inline: true },
+                                  { key: 'archive', label: t.common.archive, tone: 'danger', onClick: () => setArchiveId(row.id) },
+                              ]
+                            : undefined
+                    }
+                />
+                <Pagination paginator={services} />
+            </RecordList>
             <ConfirmDialog
                 open={archiveId !== null}
                 title={t.ops.archiveConfirm}

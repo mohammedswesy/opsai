@@ -4,6 +4,7 @@ import { Link, useForm } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { EmptyState } from '@/components/EmptyState';
 import { PageHeader } from '@/components/PageHeader';
+import { Pagination } from '@/components/Pagination';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useI18n } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout';
@@ -62,6 +63,7 @@ export default function Index({ conversations, simulation }: { conversations: Pa
                     ))}
                 </Card>
             ) : null}
+            <Pagination paginator={conversations} />
         </>
     );
 }

@@ -1,10 +1,13 @@
 import { Button } from '@/components/Button';
-import { Card, CardForm } from '@/components/Card';
+import { CardForm } from '@/components/Card';
 import { router, useForm } from '@inertiajs/react';
 import { useState, type ReactNode } from 'react';
+import { Chip } from '@/components/Chip';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { controlClassName, FormField } from '@/components/FormField';
-import { EmptyState } from '@/components/EmptyState';
+import { DataTable, type Column } from '@/components/DataTable';
+import { Initials } from '@/components/Initials';
+import { RecordList } from '@/components/RecordList';
 import { PageHeader } from '@/components/PageHeader';
 import { useI18n } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout';
@@ -40,6 +43,52 @@ export default function UsersIndex({
         role: assignableRoles[0] ?? 'technician',
         branch_ids: [] as string[],
     });
+
+    const branchNames = new Map(branches.map((branch) => [branch.id, branch.name]));
+    const columns: Column<Member>[] = [
+        {
+            key: 'name',
+            header: t.users.name,
+            primary: true,
+            cell: (row) => (
+                <span className="flex items-center gap-3">
+                    <Initials name={row.name} />
+                    <span dir="auto" className="block max-w-56 truncate" title={row.name}>
+                        {row.name}
+                    </span>
+                </span>
+            ),
+        },
+        {
+            key: 'email',
+            header: t.users.email,
+            cell: (row) => (
+                <bdi dir="ltr" className="inline-block max-w-64 truncate align-middle" title={row.email}>
+                    {row.email}
+                </bdi>
+            ),
+        },
+        { key: 'role', header: t.users.role, cell: (row) => optionLabel(t.labels, row.role) },
+        {
+            key: 'branches',
+            header: t.users.branches,
+            cell: (row) => {
+                const names = row.branch_ids.map((id) => branchNames.get(id)).filter((name): name is string => Boolean(name));
+
+                return names.length === 0 ? (
+                    <span className="text-ink-subtle">{t.common.none}</span>
+                ) : (
+                    <span className="flex flex-wrap gap-1">
+                        {names.map((name) => (
+                            <Chip key={name}>
+                                <bdi>{name}</bdi>
+                            </Chip>
+                        ))}
+                    </span>
+                );
+            },
+        },
+    ];
 
     return (
         <>
@@ -94,38 +143,15 @@ export default function UsersIndex({
                     </div>
                 </CardForm>
             ) : null}
-            {members.length === 0 ? (
-                <EmptyState title={t.users.empty} />
-            ) : (
-                <Card className="overflow-x-auto">
-                    <table className="min-w-full text-sm">
-                        <thead className="bg-zinc-50 text-zinc-500">
-                            <tr>
-                                <th className="px-4 py-3 text-start font-medium">{t.users.name}</th>
-                                <th className="px-4 py-3 text-start font-medium">{t.users.email}</th>
-                                <th className="px-4 py-3 text-start font-medium">{t.users.role}</th>
-                                {canManage ? <th className="px-4 py-3" /> : null}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {members.map((member) => (
-                                <tr key={member.id} className="border-t border-zinc-100">
-                                    <td className="px-4 py-3">{member.name}</td>
-                                    <td className="px-4 py-3">{member.email}</td>
-                                    <td className="px-4 py-3">{optionLabel(t.labels, member.role)}</td>
-                                    {canManage ? (
-                                        <td className="px-4 py-3 text-end">
-                                            <button type="button" className="text-red-700" onClick={() => setPendingId(member.id)}>
-                                                {t.users.remove}
-                                            </button>
-                                        </td>
-                                    ) : null}
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </Card>
-            )}
+            <RecordList empty={members.length === 0} emptyTitle={t.users.empty} loading="inline">
+                <DataTable
+                    caption={t.users.title}
+                    columns={columns}
+                    rows={members}
+                    rowKey={(row) => row.id}
+                    actions={canManage ? (row) => [{ key: 'remove', label: t.users.remove, tone: 'danger', onClick: () => setPendingId(row.id) }] : undefined}
+                />
+            </RecordList>
             <ConfirmDialog
                 open={pendingId !== null}
                 title={t.users.removeConfirm}
