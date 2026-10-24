@@ -31,6 +31,7 @@ import { PageMetaProvider, type PageMeta } from '@/components/PageTitle';
 import { VisitProvider } from '@/components/VisitState';
 import { useI18n } from '@/i18n';
 import { optionLabel } from '@/lib/labels';
+import { ROLE_NAVIGATION } from '@/lib/navigation';
 import { can } from '@/lib/permissions';
 
 const NAV_GROUPS_KEY = 'opsai.nav.groups';
@@ -64,16 +65,6 @@ function isCurrent(item: NavItem, url: string): boolean {
 
     return matches(item.href) || (item.also ?? []).some(matches);
 }
-
-/**
- * Role-specific navigation. `primary` items move, in this order, into a "Your work"
- * group at the top; `hidden` items are left out of the sidebar and the command menu.
- * This is display only: permissions decide what exists, and direct URLs keep working.
- */
-const ROLE_NAVIGATION: Record<string, { primary: string[]; hidden: string[] }> = {
-    technician: { primary: ['/dispatch', '/work-orders', '/tasks', '/customers', '/ai'], hidden: ['/branches', '/organization'] },
-    accountant: { primary: ['/invoices', '/payments', '/customers', '/work-orders', '/', '/ai'], hidden: ['/dispatch', '/requests'] },
-};
 
 export default function AppLayout({ children }: { children: ReactNode }) {
     const { t } = useI18n();

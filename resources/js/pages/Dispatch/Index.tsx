@@ -1,13 +1,12 @@
 import { router } from '@inertiajs/react';
 import type { AxiosError } from 'axios';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import { ChevronDown, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import { Button, ButtonLink } from '@/components/Button';
-import { Card } from '@/components/Card';
 import { Chip } from '@/components/Chip';
 import { EmptyState } from '@/components/EmptyState';
 import { controlClassName } from '@/components/FormField';
-import { Initials } from '@/components/Initials';
+import { Avatar } from '@/components/Avatar';
 import { PageHeader } from '@/components/PageHeader';
 import { PriorityBadge } from '@/components/PriorityBadge';
 import { RecordList } from '@/components/RecordList';
@@ -103,23 +102,25 @@ type DragState = {
     originY: number;
 };
 
+const surface = 'rounded-card border border-line bg-surface shadow-card';
+
 const accents: Record<string, string> = {
-    hvac: 'border-s-sky-600',
-    electrical: 'border-s-amber-500',
-    plumbing: 'border-s-cyan-700',
-    cleaning: 'border-s-green-600',
-    pest_control: 'border-s-violet-600',
+    hvac: 'border-s-info',
+    electrical: 'border-s-warning',
+    plumbing: 'border-s-brand',
+    cleaning: 'border-s-success',
+    pest_control: 'border-s-danger',
 };
 
 const tints: Record<string, string> = {
-    completed: 'bg-green-50',
-    cancelled: 'bg-red-50',
-    no_show: 'bg-red-50',
-    in_progress: 'bg-sky-50',
-    on_the_way: 'bg-sky-50',
-    arrived: 'bg-sky-50',
-    scheduled: 'bg-teal-50/80',
-    assigned: 'bg-teal-50/80',
+    completed: 'bg-success-soft',
+    cancelled: 'bg-danger-soft',
+    no_show: 'bg-danger-soft',
+    in_progress: 'bg-info-soft',
+    on_the_way: 'bg-info-soft',
+    arrived: 'bg-info-soft',
+    scheduled: 'bg-brand-soft',
+    assigned: 'bg-brand-soft',
 };
 
 function clockMinutes(value: string | null): number | null {
@@ -200,7 +201,10 @@ function validationMessage(error: unknown): string | null {
     return Array.isArray(first) ? (first[0] ?? null) : null;
 }
 
-function Ring({ label, value, total }: { label: string; value: number; total: number }) {
+const ringTones = { brand: 'stroke-brand', success: 'stroke-success', warning: 'stroke-warning', danger: 'stroke-danger' };
+
+function Ring({ label, value, total, tone }: { label: string; value: number; total: number; tone: keyof typeof ringTones }) {
+    const format = useFormat();
     const percent = total === 0 ? 0 : Math.min(100, Math.round((value / total) * 100));
     const radius = 28;
     const circumference = 2 * Math.PI * radius;
@@ -209,35 +213,38 @@ function Ring({ label, value, total }: { label: string; value: number; total: nu
     return (
         <div className="flex items-center gap-3">
             <svg viewBox="0 0 72 72" className="size-16 shrink-0" aria-hidden="true">
-                <circle cx="36" cy="36" r={radius} className="fill-none stroke-zinc-100" strokeWidth="6" />
-                <circle
-                    cx="36"
-                    cy="36"
-                    r={radius}
-                    className="fill-none stroke-teal-700"
-                    strokeWidth="6"
-                    strokeLinecap="round"
-                    strokeDasharray={`${dash} ${circumference - dash}`}
-                    transform="rotate(-90 36 36)"
-                />
-                <text x="36" y="40" textAnchor="middle" className="fill-zinc-900 text-[11px] font-semibold">
-                    {percent}%
+                <circle cx="36" cy="36" r={radius} className="fill-none stroke-surface-muted" strokeWidth="6" />
+                {dash > 0 ? <circle cx="36" cy="36" r={radius} className={`fill-none ${ringTones[tone]}`} strokeWidth="6" strokeLinecap="round" strokeDasharray={`${dash} ${circumference - dash}`} transform="rotate(-90 36 36)" /> : null}
+                <text x="36" y="40" textAnchor="middle" className="fill-ink text-micro font-semibold tabular-nums">
+                    {format.number(percent)}%
                 </text>
             </svg>
-            <div>
-                <p className="text-sm font-medium text-zinc-900">{label}</p>
-                <p className="text-xs tabular-nums text-zinc-500">
-                    {value}/{total}
+            <div className="min-w-0">
+                <p className="text-body font-medium text-ink">{label}</p>
+                <p className="text-caption text-ink-muted tabular-nums">
+                    {format.number(value)}/{format.number(total)}
                 </p>
             </div>
         </div>
     );
 }
 
+/** Utilisation bar capped at 100%; above that it turns to the warning tone. */
+function UtilizationBar({ value, className = '' }: { value: number; className?: string }) {
+    return (
+        <span className={`block h-1.5 overflow-hidden rounded-badge bg-surface-muted ${className}`.trim()} aria-hidden="true">
+            <span className={`block h-full rounded-badge ${value > 100 ? 'bg-warning' : 'bg-brand'}`} style={{ width: `${Math.min(Math.max(value, 0), 100)}%` }} />
+        </span>
+    );
+}
+
 export default function Index({ board }: { board: Board }) {
-    const { t } = useI18n();
+    const { t, dir } = useI18n();
     const can = useCan();
     const format = useFormat();
+    const summaryId = useId();
+    const gridRef = useRef<HTMLDivElement>(null);
+    const [summaryOpen, setSummaryOpen] = useState(false);
     const categoryLabel = (category: string): string => {
         const key = skillKey(category);
 
@@ -281,6 +288,13 @@ export default function Index({ board }: { board: Board }) {
     const dayEmpty = board.counts.total === 0;
     const filteredEmpty = technicians.length === 0 && unassigned.length === 0 && !dayEmpty;
     const ranked = unassignedJob ? rankTechnicians(technicians, unassignedJob, workStart, workEnd) : [];
+
+    // Start the timeline at the start edge (the right in RTL), where the sticky hour column sits.
+    useLayoutEffect(() => {
+        if (gridRef.current) {
+            gridRef.current.scrollLeft = 0;
+        }
+    }, [board.date, dir, technicians.length]);
 
     function visit(date: string, branchId = board.filters.branch_id) {
         router.get('/dispatch', { date, branch_id: branchId ?? '' }, { preserveState: true, preserveScroll: true, replace: true });
@@ -424,71 +438,176 @@ export default function Index({ board }: { board: Board }) {
     }
 
     function blockClass(job: Job): string {
-        const accent = accents[skillKey(job.category) ?? ''] ?? 'border-s-teal-700';
-        const tint = tints[job.status] ?? 'bg-white';
+        const accent = accents[skillKey(job.category) ?? ''] ?? 'border-s-brand';
+        const tint = tints[job.status] ?? 'bg-surface';
 
-        return `border border-zinc-200/80 shadow-sm ${tint} border-s-4 ${accent}`;
+        return `border border-line shadow-control ${tint} border-s-4 ${accent}`;
     }
+
+    const countItems = [
+        { key: 'total', label: t.dispatch.total, value: board.counts.total, tone: 'text-ink' },
+        { key: 'completed', label: t.dispatch.completed, value: board.counts.completed, tone: 'text-success' },
+        { key: 'unassigned', label: t.dispatch.unassigned, value: board.counts.unassigned, tone: board.counts.unassigned > 0 ? 'text-warning' : 'text-ink' },
+        { key: 'overdue', label: t.dispatch.overdue, value: board.counts.overdue, tone: board.counts.overdue > 0 ? 'text-danger' : 'text-ink' },
+    ];
 
     return (
         <div data-testid="dispatch-board">
             <PageHeader title={t.dispatch.title} subtitle={t.dispatch.subtitle} />
             {toast ? (
-                <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm" role="status">
-                    {toast}
+                <div className="mb-4 flex items-start justify-between gap-3 rounded-card border border-danger-border bg-danger-soft px-4 py-3 text-body text-danger" role="alert">
+                    <p className="min-w-0 break-words">{toast}</p>
+                    <button type="button" className="shrink-0 rounded-control p-1 hover:bg-danger-border" aria-label={t.dispatch.dismiss} onClick={() => setToast(null)}>
+                        <X className="size-4" strokeWidth={1.75} aria-hidden="true" />
+                    </button>
                 </div>
             ) : null}
-            <Card className="mb-4 shadow-sm">
-                <div className="flex flex-wrap items-end gap-3 p-4">
-                    <div className="flex items-center gap-1">
-                        <Button variant="secondary" aria-label={t.dispatch.previousDay} onClick={() => visit(shiftDate(board.date, -1))}>
-                            <ChevronLeft className="size-4 rtl:rotate-180" />
-                        </Button>
-                        <input className={`${controlClassName} w-40`} type="date" aria-label={t.ops.date} value={board.date} onChange={(event) => visit(event.target.value)} />
-                        <Button variant="secondary" aria-label={t.dispatch.nextDay} onClick={() => visit(shiftDate(board.date, 1))}>
-                            <ChevronRight className="size-4 rtl:rotate-180" />
-                        </Button>
-                    </div>
-                    <p className="pb-2 text-xs tabular-nums text-zinc-500">
-                        {board.hours.work_start}–{board.hours.work_end}
-                    </p>
-                    <select className={`${controlClassName} max-w-xs`} aria-label={t.ops.branch} value={board.filters.branch_id ?? ''} onChange={(event) => visit(board.date, event.target.value)}>
-                        <option value="">{t.dashboard.allBranches}</option>
-                        {board.branches.map((branch) => (
-                            <option key={branch.id} value={branch.id}>
-                                {branch.name}
-                            </option>
-                        ))}
-                    </select>
-                    <select className={`${controlClassName} max-w-xs`} aria-label={t.dispatch.skill} value={skill} onChange={(event) => setSkill(event.target.value)}>
-                        <option value="">{t.dispatch.skill}</option>
-                        {SKILLS.map((value) => (
-                            <option key={value} value={value}>
-                                {optionLabel(t.labels, value)}
-                            </option>
-                        ))}
-                    </select>
-                    <input className={`${controlClassName} max-w-xs`} value={search} placeholder={t.dispatch.search} aria-label={t.dispatch.search} onChange={(event) => setSearch(event.target.value)} />
+
+            <div className={`${surface} mb-4 flex flex-wrap items-end gap-3 p-4`}>
+                <div className="flex items-center gap-1">
+                    <Button variant="secondary" aria-label={t.dispatch.previousDay} onClick={() => visit(shiftDate(board.date, -1))}>
+                        <ChevronLeft className="size-4 rtl:rotate-180" aria-hidden="true" />
+                    </Button>
+                    <input className={`${controlClassName} w-40`} type="date" aria-label={t.ops.date} value={board.date} onChange={(event) => visit(event.target.value)} />
+                    <Button variant="secondary" aria-label={t.dispatch.nextDay} onClick={() => visit(shiftDate(board.date, 1))}>
+                        <ChevronRight className="size-4 rtl:rotate-180" aria-hidden="true" />
+                    </Button>
                 </div>
-            </Card>
+                <div className="min-w-0 pb-0.5">
+                    <p className="text-body font-medium text-ink">{format.date(board.date, 'long')}</p>
+                    <p className="text-caption text-ink-muted tabular-nums">
+                        {format.time(board.hours.work_start)}–{format.time(board.hours.work_end)}
+                    </p>
+                </div>
+                <select className={`${controlClassName} max-w-xs`} aria-label={t.ops.branch} value={board.filters.branch_id ?? ''} onChange={(event) => visit(board.date, event.target.value)}>
+                    <option value="">{t.dashboard.allBranches}</option>
+                    {board.branches.map((branch) => (
+                        <option key={branch.id} value={branch.id}>
+                            {branch.name}
+                        </option>
+                    ))}
+                </select>
+                <select className={`${controlClassName} max-w-xs`} aria-label={t.dispatch.skill} value={skill} onChange={(event) => setSkill(event.target.value)}>
+                    <option value="">{t.dispatch.skill}</option>
+                    {SKILLS.map((value) => (
+                        <option key={value} value={value}>
+                            {optionLabel(t.labels, value)}
+                        </option>
+                    ))}
+                </select>
+                <input className={`${controlClassName} max-w-xs`} value={search} placeholder={t.dispatch.search} aria-label={t.dispatch.search} onChange={(event) => setSearch(event.target.value)} />
+            </div>
+
+            <section className={`${surface} mb-4`}>
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
+                    <h2 className="text-heading font-semibold text-ink">{t.dispatch.overview}</h2>
+                    <dl className="flex flex-1 flex-wrap gap-x-5 gap-y-1 text-body">
+                        {countItems.map((item) => (
+                            <div key={item.key} className="flex items-baseline gap-1.5">
+                                <dt className="text-ink-muted">{item.label}</dt>
+                                <dd className={`font-semibold tabular-nums ${item.tone}`}>{format.number(item.value)}</dd>
+                            </div>
+                        ))}
+                    </dl>
+                    <button
+                        type="button"
+                        className="inline-flex min-h-9 items-center gap-1.5 rounded-control px-2.5 text-body font-medium text-brand hover:bg-surface-muted hover:text-brand-strong"
+                        aria-expanded={summaryOpen}
+                        aria-controls={summaryId}
+                        onClick={() => setSummaryOpen((current) => !current)}
+                    >
+                        {summaryOpen ? t.dispatch.hideDetails : t.dispatch.showDetails}
+                        <ChevronDown className={`size-4 transition-transform duration-200 ${summaryOpen ? 'rotate-180' : ''}`} strokeWidth={1.75} aria-hidden="true" />
+                    </button>
+                </div>
+                {summaryOpen ? (
+                    <div id={summaryId} className="grid gap-4 border-t border-line p-4 xl:grid-cols-[minmax(0,1fr)_16rem]">
+                        <div className="min-w-0 overflow-x-auto">
+                            <h3 className="mb-2 text-caption font-semibold text-ink-secondary">{t.dispatch.technicians}</h3>
+                            <table className="min-w-full text-body">
+                                <thead>
+                                    <tr className="border-b border-line text-caption text-ink-muted">
+                                        <th scope="col" className="px-3 py-2 text-start font-medium">{t.ops.technician}</th>
+                                        <th scope="col" className="px-3 py-2 text-start font-medium">{t.ops.skills}</th>
+                                        <th scope="col" className="px-3 py-2 text-start font-medium">{t.ops.availability}</th>
+                                        <th scope="col" className="px-3 py-2 text-end font-medium">{t.dispatch.utilization}</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="text-ink-secondary">
+                                    {technicians.map((technician) => (
+                                        <tr key={`${technician.id}-row`}>
+                                            <td className="px-3 py-2.5 font-medium text-ink">
+                                                <bdi>{technician.name ?? t.common.none}</bdi>
+                                            </td>
+                                            <td className="px-3 py-2.5">
+                                                <div className="flex flex-wrap gap-1">
+                                                    {technician.skills.length === 0
+                                                        ? t.common.none
+                                                        : technician.skills.map((item) => (
+                                                              <Chip key={item} tone="brand">
+                                                                  {optionLabel(t.labels, item)}
+                                                              </Chip>
+                                                          ))}
+                                                </div>
+                                            </td>
+                                            <td className="px-3 py-2.5">
+                                                <StatusBadge value={technician.availability} />
+                                            </td>
+                                            <td className="px-3 py-2.5">
+                                                <div className="flex items-center justify-end gap-2" title={technician.utilization > 100 ? t.dispatch.overCapacity : undefined}>
+                                                    <span className={`tabular-nums ${technician.utilization > 100 ? 'font-medium text-warning' : ''}`}>{format.number(technician.utilization)}%</span>
+                                                    <UtilizationBar value={technician.utilization} className="w-16" />
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            <p className="mt-2 text-caption text-ink-muted">
+                                {t.dispatch.workingDay.replace('{start}', format.time(board.hours.work_start)).replace('{end}', format.time(board.hours.work_end))}
+                            </p>
+                        </div>
+                        <div className="space-y-4">
+                            <Ring label={t.dispatch.completed} value={board.counts.completed} total={board.counts.total} tone="success" />
+                            <Ring label={t.dispatch.unassigned} value={board.counts.unassigned} total={board.counts.total} tone="warning" />
+                            <Ring label={t.dispatch.overdue} value={board.counts.overdue} total={board.counts.total} tone="danger" />
+                        </div>
+                    </div>
+                ) : null}
+            </section>
+
             <RecordList empty={filteredEmpty} filtered>
                 <div className="grid items-start gap-4 xl:grid-cols-[18rem_minmax(0,1fr)]">
-                    <Card className="p-4 shadow-sm">
+                    <section className={`${surface} p-4`}>
                         <div className="mb-3 flex items-center justify-between gap-2">
-                            <h2 className="text-sm font-semibold text-zinc-900">{t.dispatch.unassigned}</h2>
-                            <span className="rounded-full bg-teal-50 px-2 py-0.5 text-xs font-semibold text-teal-800 tabular-nums">{unassigned.length}</span>
+                            <h2 className="text-heading font-semibold text-ink">{t.dispatch.unassigned}</h2>
+                            <span className="rounded-badge bg-brand-soft px-2 py-0.5 text-caption font-semibold text-brand-strong tabular-nums">{format.number(unassigned.length)}</span>
                         </div>
                         {unassigned.length === 0 ? (
-                            <p className="text-sm text-zinc-500">{t.dispatch.emptyUnassigned}</p>
+                            <p className="text-body text-ink-muted">{t.dispatch.emptyUnassigned}</p>
                         ) : (
                             <div className="space-y-2">
                                 {unassigned.map((job) => (
-                                    <button key={job.id} type="button" className="w-full rounded-xl border border-zinc-200 bg-white p-3 text-start shadow-sm transition hover:border-zinc-300 hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700" onClick={() => setUnassignedJob(job)}>
-                                        <p className="text-sm font-medium text-zinc-900">{job.title}</p>
-                                        <p className="mt-1 font-mono text-xs text-zinc-500">{job.reference}</p>
-                                        <p className="mt-1 text-xs text-zinc-500">
+                                    <button
+                                        key={job.id}
+                                        type="button"
+                                        className="w-full rounded-control border border-line bg-surface p-3 text-start shadow-control transition-colors hover:border-line-strong hover:bg-surface-muted focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+                                        onClick={() => setUnassignedJob(job)}
+                                    >
+                                        <p className="text-body font-medium break-words text-ink">
+                                            <bdi>{job.title}</bdi>
+                                        </p>
+                                        <p className="mt-1 font-mono text-caption text-ink-muted">
+                                            <bdi dir="ltr">{job.reference}</bdi>
+                                        </p>
+                                        <p className="mt-1 text-caption text-ink-muted">
                                             {job.requested_at ? format.time(job.requested_at) : t.common.none}
-                                            {job.area ? ` · ${job.area}` : ''}
+                                            {job.area ? (
+                                                <>
+                                                    {' · '}
+                                                    <bdi>{job.area}</bdi>
+                                                </>
+                                            ) : null}
                                         </p>
                                         <div className="mt-2 flex flex-wrap gap-1">
                                             <PriorityBadge value={job.priority} />
@@ -498,7 +617,7 @@ export default function Index({ board }: { board: Board }) {
                                 ))}
                             </div>
                         )}
-                    </Card>
+                    </section>
                     <div className="min-w-0">
                         {dayEmpty ? (
                             <div className="space-y-3">
@@ -517,52 +636,66 @@ export default function Index({ board }: { board: Board }) {
                             <>
                                 <div className="space-y-3 lg:hidden">
                                     {technicians.map((technician) => (
-                                        <Card key={technician.id} className="p-4 shadow-sm">
+                                        <section key={technician.id} className={`${surface} p-4`}>
                                             <TechnicianHeading technician={technician} roleLabel={technician.role ? optionLabel(t.labels, technician.role) : null} />
                                             <div className="mt-3 space-y-2">
                                                 {blocks(technician).map(({ job }) => (
-                                                    <button key={`${job.id}-agenda`} type="button" className={`w-full rounded-lg px-3 py-2 text-start ${blockClass(job)}`} onClick={() => openJob(job)}>
-                                                        <p className="text-sm font-medium">{job.title}</p>
-                                                        <p className="font-mono text-[10px] text-zinc-500">{job.reference}</p>
-                                                        <p className="text-xs tabular-nums text-zinc-500">{format.time(job.start)} – {format.time(job.end)}</p>
-                                                        <p className="truncate text-xs text-zinc-500">{job.customer_name}</p>
+                                                    <button key={`${job.id}-agenda`} type="button" className={`w-full rounded-control px-3 py-2 text-start ${blockClass(job)}`} onClick={() => openJob(job)}>
+                                                        <p className="text-body font-medium break-words text-ink">
+                                                            <bdi>{job.title}</bdi>
+                                                        </p>
+                                                        <p className="font-mono text-micro text-ink-muted">
+                                                            <bdi dir="ltr">{job.reference}</bdi>
+                                                        </p>
+                                                        <p className="text-caption text-ink-muted tabular-nums">
+                                                            {format.time(job.start)} – {format.time(job.end)}
+                                                        </p>
+                                                        <p className="truncate text-caption text-ink-muted">
+                                                            <bdi>{job.customer_name}</bdi>
+                                                        </p>
                                                         <StatusBadge value={job.status} />
                                                     </button>
                                                 ))}
                                             </div>
-                                        </Card>
+                                        </section>
                                     ))}
                                 </div>
-                                <Card className="hidden overflow-x-auto shadow-sm lg:block">
+                                <div ref={gridRef} className={`${surface} hidden overflow-x-auto lg:block`}>
                                     <div className="grid" style={{ gridTemplateColumns: `4.5rem repeat(${technicians.length}, minmax(10.5rem, 1fr))`, minWidth: `${4.5 + technicians.length * 10.5}rem` }}>
-                                        <div className="sticky start-0 z-20 bg-white" />
+                                        <div className="sticky start-0 z-20 border-e border-b border-line bg-surface" />
                                         {technicians.map((technician) => (
-                                            <div key={technician.id} className="border-b border-s border-zinc-200 p-3">
+                                            <div key={technician.id} className="border-e border-b border-line p-3 last:border-e-0">
                                                 <TechnicianHeading technician={technician} roleLabel={technician.role ? optionLabel(t.labels, technician.role) : null} />
                                             </div>
                                         ))}
-                                        <div className="sticky start-0 z-20 bg-white">
+                                        <div className="sticky start-0 z-20 border-e border-line bg-surface">
                                             {hours.map((hour) => (
-                                                <div key={hour} className="h-[3.25rem] border-t border-zinc-100 px-2 pt-1 text-[11px] font-medium tabular-nums text-zinc-600">
-                                                    {clockLabel(hour)}
+                                                <div key={hour} className="h-[3.25rem] border-t border-line px-2 pt-1 text-micro font-medium text-ink-secondary tabular-nums first:border-t-0">
+                                                    {format.time(clockLabel(hour))}
                                                 </div>
                                             ))}
                                         </div>
                                         {technicians.map((technician) => (
-                                            <div key={`${technician.id}-lane`} data-lane data-technician-id={technician.id} className="relative border-s border-zinc-200" style={{ height: `${hours.length * 3.25}rem` }}>
+                                            <div key={`${technician.id}-lane`} data-lane data-technician-id={technician.id} className="relative border-e border-line last:border-e-0" style={{ height: `${hours.length * 3.25}rem` }}>
                                                 {hours.map((hour) => (
-                                                    <div key={hour} className={`absolute inset-x-0 border-t border-zinc-100 ${hour < workStart || hour >= workEnd ? 'bg-zinc-50/80' : ''}`} style={{ top: `${((hour - gridStart) / span) * 100}%`, height: `${(60 / span) * 100}%` }} />
+                                                    <div
+                                                        key={hour}
+                                                        className={`absolute inset-x-0 border-t border-line first:border-t-0 ${hour < workStart || hour >= workEnd ? 'bg-surface-muted' : ''}`}
+                                                        style={{ top: `${((hour - gridStart) / span) * 100}%`, height: `${(60 / span) * 100}%` }}
+                                                    />
                                                 ))}
                                                 {board.is_today && nowMinutes !== null && nowMinutes >= gridStart && nowMinutes <= gridEnd ? (
-                                                    <div className="absolute inset-x-0 z-10 border-t-2 border-red-600" style={{ top: `${((nowMinutes - gridStart) / span) * 100}%` }} />
+                                                    <div className="absolute inset-x-0 z-10 border-t-2 border-danger" style={{ top: `${((nowMinutes - gridStart) / span) * 100}%` }} />
                                                 ) : null}
                                                 {drag?.technicianId === technician.id ? (
                                                     <div
-                                                        className="pointer-events-none absolute inset-x-1 z-20 rounded-md border border-dashed border-teal-700 bg-teal-50/80 px-2 py-1 text-xs shadow-sm"
+                                                        className="pointer-events-none absolute inset-x-1 z-20 rounded-control border border-dashed border-brand bg-brand-soft px-2 py-1 text-caption shadow-control"
                                                         style={{ top: `${((drag.start - gridStart) / span) * 100}%`, height: `${(Math.max(drag.duration, 20) / span) * 100}%` }}
                                                     >
-                                                        <span className="block truncate font-medium">{drag.job.title}</span>
-                                                        <span className="block tabular-nums text-zinc-500">{clockLabel(drag.start)}–{clockLabel(drag.start + drag.duration)}</span>
+                                                        <span className="block truncate font-medium text-ink">{drag.job.title}</span>
+                                                        <span className="block text-ink-muted tabular-nums">
+                                                            {format.time(clockLabel(drag.start))}–{format.time(clockLabel(drag.start + drag.duration))}
+                                                        </span>
                                                     </div>
                                                 ) : null}
                                                 {blocks(technician).map(({ job, kind }) => {
@@ -579,7 +712,7 @@ export default function Index({ board }: { board: Board }) {
                                                         <button
                                                             key={job.id}
                                                             type="button"
-                                                            className={`absolute inset-x-1 z-10 flex flex-col items-start overflow-hidden rounded-md px-2 py-1 text-start text-xs leading-tight transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 ${blockClass(job)} ${drag?.job.id === job.id ? 'opacity-40' : ''} ${draggable ? 'cursor-grab' : ''}`}
+                                                            className={`absolute inset-x-1 z-10 flex flex-col items-start overflow-hidden rounded-control px-2 py-1 text-start text-caption leading-tight transition hover:brightness-95 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none ${blockClass(job)} ${drag?.job.id === job.id ? 'opacity-40' : ''} ${draggable ? 'cursor-grab' : ''}`}
                                                             style={{
                                                                 top: `${((start - gridStart) / span) * 100}%`,
                                                                 height: `${(Math.max(end - start, 20) / span) * 100}%`,
@@ -596,116 +729,92 @@ export default function Index({ board }: { board: Board }) {
                                                             onPointerMove={draggable ? moveDrag : undefined}
                                                             onPointerUp={draggable ? endDrag : undefined}
                                                         >
-                                                            <span className="block truncate font-medium">{job.title}</span>
-                                                            <span className="block truncate tabular-nums text-zinc-500">{clockLabel(start)}–{clockLabel(end)}</span>
-                                                            <span className="block truncate text-zinc-500">{job.customer_name}</span>
+                                                            <span className="block w-full truncate font-medium text-ink">{job.title}</span>
+                                                            <span className="block w-full truncate text-ink-muted tabular-nums">
+                                                                {format.time(job.start)}–{format.time(job.end)}
+                                                            </span>
+                                                            <span className="block w-full truncate text-ink-muted">{job.customer_name}</span>
                                                         </button>
                                                     );
                                                 })}
                                             </div>
                                         ))}
                                     </div>
-                                    <p className="px-4 py-2 text-xs text-zinc-500">{t.dispatch.gridNote}</p>
-                                </Card>
+                                    <p className="border-t border-line px-4 py-2 text-caption text-ink-muted">
+                                        {t.dispatch.gridNote} {technicians.length > 4 ? t.dispatch.scrollHint : null}
+                                    </p>
+                                </div>
                             </>
                         )}
                     </div>
                 </div>
             </RecordList>
-            <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
-                <Card className="overflow-x-auto shadow-sm">
-                    <h2 className="px-4 pt-4 text-sm font-semibold text-zinc-900">{t.dispatch.technicians}</h2>
-                    <table className="min-w-full text-start text-sm">
-                        <thead className="text-zinc-500">
-                            <tr>
-                                <th className="px-4 py-2 text-start text-xs font-medium">{t.ops.technician}</th>
-                                <th className="px-4 py-2 text-start text-xs font-medium">{t.ops.skills}</th>
-                                <th className="px-4 py-2 text-start text-xs font-medium">{t.ops.availability}</th>
-                                <th className="px-4 py-2 text-start text-xs font-medium">{t.dispatch.utilization}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {technicians.map((technician) => (
-                                <tr key={`${technician.id}-row`}>
-                                    <td className="px-4 py-3 font-medium">{technician.name ?? t.common.none}</td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex flex-wrap gap-1">
-                                            {technician.skills.length === 0 ? t.common.none : technician.skills.map((item) => <Chip key={item} tone="brand">{optionLabel(t.labels, item)}</Chip>)}
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <StatusBadge value={technician.availability} />
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex items-center gap-2">
-                                            <span className="tabular-nums">{technician.utilization}%</span>
-                                            <span className="h-1.5 w-16 overflow-hidden rounded-full bg-zinc-100">
-                                                <span className="block h-full bg-teal-700" style={{ width: `${Math.min(technician.utilization, 100)}%` }} />
-                                            </span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    <p className="px-4 pb-4 text-xs text-zinc-500">{t.dispatch.workingDay.replace('{start}', format.time(board.hours.work_start)).replace('{end}', format.time(board.hours.work_end))}</p>
-                </Card>
-                <Card className="space-y-4 p-4 shadow-sm">
-                    <h2 className="text-sm font-semibold text-zinc-900">{t.dispatch.overview}</h2>
-                    <Ring label={t.dispatch.completed} value={board.counts.completed} total={board.counts.total} />
-                    <Ring label={t.dispatch.unassigned} value={board.counts.unassigned} total={board.counts.total} />
-                    <Ring label={t.dispatch.overdue} value={board.counts.overdue} total={board.counts.total} />
-                    <p className="text-xs tabular-nums text-zinc-500">
-                        {t.dispatch.total}: {board.counts.total}
-                    </p>
-                </Card>
-            </div>
+
             {unassignedJob ? (
                 <Drawer title={unassignedJob.type === 'work_order' ? t.dispatch.assign : t.dispatch.schedule} onClose={() => setUnassignedJob(null)} closeLabel={t.dispatch.close}>
-                    <p className="text-sm font-medium text-zinc-900">{unassignedJob.title}</p>
-                    <p className="mt-1 font-mono text-xs text-zinc-500">{unassignedJob.reference}</p>
-                    <p className="mt-3 text-xs text-zinc-500">{t.dispatch.suggestion}</p>
+                    <p className="text-body font-medium text-ink">
+                        <bdi>{unassignedJob.title}</bdi>
+                    </p>
+                    <p className="mt-1 font-mono text-caption text-ink-muted">
+                        <bdi dir="ltr">{unassignedJob.reference}</bdi>
+                    </p>
+                    <p className="mt-3 text-caption text-ink-muted">{t.dispatch.suggestion}</p>
                     <div className="mt-4 space-y-3">
                         {ranked.map((item, index) => (
-                            <div key={item.technician.id} className="rounded-xl border border-zinc-200 p-3 shadow-sm">
+                            <div key={item.technician.id} className="rounded-control border border-line p-3">
                                 <div className="flex items-center justify-between gap-2">
-                                    <p className="text-sm font-medium">{item.technician.name}</p>
+                                    <p className="text-body font-medium text-ink">
+                                        <bdi>{item.technician.name}</bdi>
+                                    </p>
                                     {index === 0 && item.slots.length > 0 ? <Chip tone="brand">{t.dispatch.bestMatch}</Chip> : null}
                                 </div>
-                                <p className="mt-1 text-xs tabular-nums text-zinc-500">{item.technician.utilization}%</p>
+                                <div className="mt-1.5 flex items-center gap-2">
+                                    <span className={`text-caption tabular-nums ${item.technician.utilization > 100 ? 'font-medium text-warning' : 'text-ink-muted'}`}>{format.number(item.technician.utilization)}%</span>
+                                    <UtilizationBar value={item.technician.utilization} className="w-20" />
+                                </div>
                                 {unassignedJob.type === 'work_order' ? (
                                     <Button className="mt-2" variant="secondary" disabled={!canAssign} onClick={() => assign(unassignedJob, item.technician.id)}>
                                         {t.dispatch.assign}
                                     </Button>
                                 ) : item.slots.length === 0 ? (
-                                    <p className="mt-1 text-xs text-zinc-500">{t.dispatch.noSlots}</p>
+                                    <p className="mt-1 text-caption text-ink-muted">{t.dispatch.noSlots}</p>
                                 ) : (
                                     <div className="mt-2 flex flex-wrap gap-2">
                                         {item.slots.map((slot) => (
                                             <Button key={`${slot.start}-${slot.end}`} variant="secondary" disabled={!canSchedule} onClick={() => schedule(unassignedJob, item.technician.id, slot)}>
-                                                {clockLabel(slot.start)}–{clockLabel(slot.end)}
+                                                <span className="tabular-nums">
+                                                    {format.time(clockLabel(slot.start))}–{format.time(clockLabel(slot.end))}
+                                                </span>
                                             </Button>
                                         ))}
                                     </div>
                                 )}
                             </div>
                         ))}
-                        {ranked.length === 0 ? <p className="text-sm text-zinc-500">{t.dispatch.noMatch}</p> : null}
+                        {ranked.length === 0 ? <p className="text-body text-ink-muted">{t.dispatch.noMatch}</p> : null}
                     </div>
                 </Drawer>
             ) : null}
             {selected ? (
                 <Drawer title={t.dispatch.details} onClose={() => setSelected(null)} closeLabel={t.dispatch.close}>
-                    <p className="text-sm font-medium text-zinc-900">{selected.title}</p>
-                    <p className="mt-1 font-mono text-xs text-zinc-500">{selected.reference}</p>
-                    <dl className="mt-3 space-y-2 text-sm">
+                    <p className="text-body font-medium text-ink">
+                        <bdi>{selected.title}</bdi>
+                    </p>
+                    <p className="mt-1 font-mono text-caption text-ink-muted">
+                        <bdi dir="ltr">{selected.reference}</bdi>
+                    </p>
+                    <dl className="mt-3 space-y-2 text-body">
                         <div>
-                            <dt className="text-zinc-500">{t.dispatch.customer}</dt>
-                            <dd>{selected.customer_name ?? t.common.none}</dd>
+                            <dt className="text-caption text-ink-muted">{t.dispatch.customer}</dt>
+                            <dd className="text-ink">
+                                <bdi>{selected.customer_name ?? t.common.none}</bdi>
+                            </dd>
                         </div>
                         <div>
-                            <dt className="text-zinc-500">{t.dispatch.time}</dt>
-                            <dd className="tabular-nums">{format.time(selected.start)} – {format.time(selected.end)}</dd>
+                            <dt className="text-caption text-ink-muted">{t.dispatch.time}</dt>
+                            <dd className="text-ink tabular-nums">
+                                {format.time(selected.start)} – {format.time(selected.end)}
+                            </dd>
                         </div>
                         <div className="flex flex-wrap gap-1">
                             <StatusBadge value={selected.status} />
@@ -723,8 +832,8 @@ export default function Index({ board }: { board: Board }) {
                                 void reschedule(selected, draftTechnician, start, end);
                             }}
                         >
-                            <label className="block text-sm">
-                                <span className="text-zinc-500">{t.ops.technician}</span>
+                            <label className="block text-body">
+                                <span className="text-caption text-ink-muted">{t.ops.technician}</span>
                                 <select className={`${controlClassName} mt-1`} value={draftTechnician} onChange={(event) => setDraftTechnician(event.target.value)}>
                                     {board.technicians.map((technician) => (
                                         <option key={technician.id} value={technician.id}>
@@ -734,16 +843,18 @@ export default function Index({ board }: { board: Board }) {
                                 </select>
                             </label>
                             <div className="grid grid-cols-2 gap-2">
-                                <label className="block text-sm">
-                                    <span className="text-zinc-500">{t.ops.start}</span>
+                                <label className="block text-body">
+                                    <span className="text-caption text-ink-muted">{t.ops.start}</span>
                                     <input className={`${controlClassName} mt-1`} type="time" step={900} value={draftStart} onChange={(event) => setDraftStart(event.target.value)} />
                                 </label>
-                                <label className="block text-sm">
-                                    <span className="text-zinc-500">{t.ops.end}</span>
+                                <label className="block text-body">
+                                    <span className="text-caption text-ink-muted">{t.ops.end}</span>
                                     <input className={`${controlClassName} mt-1`} type="time" step={900} value={draftEnd} onChange={(event) => setDraftEnd(event.target.value)} />
                                 </label>
                             </div>
-                            <Button type="submit" variant="primary">{t.dispatch.reschedule}</Button>
+                            <Button type="submit" variant="primary">
+                                {t.dispatch.reschedule}
+                            </Button>
                         </form>
                     ) : null}
                     <div className="mt-4 flex flex-wrap gap-2">
@@ -795,31 +906,68 @@ function rankTechnicians(list: TechnicianColumn[], job: Unassigned, workStart: n
         });
 }
 
+const availabilityDot: Record<string, string> = { available: 'bg-success', busy: 'bg-warning' };
+
 function TechnicianHeading({ technician, roleLabel }: { technician: TechnicianColumn; roleLabel: string | null }) {
+    const { t } = useI18n();
+    const format = useFormat();
+    const over = technician.utilization > 100;
+
     return (
         <div className="flex items-center gap-2">
             <span className="relative">
-                <Initials name={technician.name ?? ''} />
-                <span className={`absolute -bottom-0.5 -end-0.5 size-2.5 rounded-full border border-white ${technician.availability === 'available' ? 'bg-green-600' : technician.availability === 'busy' ? 'bg-amber-500' : 'bg-zinc-400'}`} />
+                <Avatar name={technician.name ?? ''} size="sm" />
+                <span className={`absolute -end-0.5 -bottom-0.5 size-2.5 rounded-badge border-2 border-surface ${availabilityDot[technician.availability] ?? 'bg-ink-subtle'}`} aria-hidden="true" />
             </span>
             <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-zinc-900">{technician.name}</p>
-                <p className="truncate text-xs text-zinc-500">{roleLabel ?? technician.branch}</p>
-                <span className="mt-1 block h-1.5 overflow-hidden rounded-full bg-zinc-100">
-                    <span className="block h-full bg-teal-700" style={{ width: `${Math.min(technician.utilization, 100)}%` }} />
-                </span>
+                <p className="truncate text-body font-medium text-ink">
+                    <bdi>{technician.name}</bdi>
+                </p>
+                <p className="truncate text-caption text-ink-muted">
+                    <bdi>{roleLabel ?? technician.branch}</bdi>
+                </p>
+                <div className="mt-1 flex items-center gap-1.5" title={over ? t.dispatch.overCapacity : undefined}>
+                    <UtilizationBar value={technician.utilization} className="flex-1" />
+                    <span className={`text-micro tabular-nums ${over ? 'font-semibold text-warning' : 'text-ink-muted'}`}>
+                        {format.number(technician.utilization)}%<span className="sr-only"> {t.dispatch.utilization}</span>
+                    </span>
+                </div>
             </div>
         </div>
     );
 }
 
+/** Side sheet for scheduling and job details: a modal dialog that closes on Escape or backdrop click. */
 function Drawer({ title, onClose, closeLabel, children }: { title: string; onClose: () => void; closeLabel: string; children: ReactNode }) {
+    const titleId = useId();
+    const panelRef = useRef<HTMLElement>(null);
+
+    useEffect(() => {
+        const previous = document.activeElement as HTMLElement | null;
+        panelRef.current?.querySelector<HTMLElement>('button')?.focus();
+
+        function onKeyDown(event: KeyboardEvent) {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        }
+
+        document.addEventListener('keydown', onKeyDown);
+
+        return () => {
+            document.removeEventListener('keydown', onKeyDown);
+            previous?.focus();
+        };
+    }, [onClose]);
+
     return (
-        <div className="fixed inset-0 z-40 flex justify-end bg-zinc-950/40">
-            <button type="button" className="absolute inset-0" aria-label={closeLabel} onClick={onClose} />
-            <aside className="relative z-10 h-full w-full max-w-md overflow-y-auto border-s border-zinc-200 bg-white p-5 shadow-xl">
+        <div className="fixed inset-0 z-40 flex justify-end bg-ink/40">
+            <button type="button" tabIndex={-1} className="absolute inset-0" aria-label={closeLabel} onClick={onClose} />
+            <aside ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} className="relative z-10 h-full w-full max-w-md overflow-y-auto border-s border-line bg-surface p-5 shadow-overlay">
                 <div className="mb-4 flex items-center justify-between gap-3">
-                    <h2 className="text-sm font-semibold text-zinc-900">{title}</h2>
+                    <h2 id={titleId} className="text-heading font-semibold text-ink">
+                        {title}
+                    </h2>
                     <Button variant="secondary" onClick={onClose}>
                         {closeLabel}
                     </Button>
