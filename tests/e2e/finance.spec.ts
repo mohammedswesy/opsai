@@ -9,7 +9,7 @@ test('owner invoices a completed work order and records both payments', async ({
     await page.getByRole('row').filter({ hasText: 'Seeded completed visit' }).getByRole('link', { name: 'View' }).click();
     await page.getByRole('button', { name: 'Generate invoice' }).click();
     await expect(page.getByRole('heading', { name: /INV-\d{4}-\d{6}/ })).toBeVisible();
-    await expect(page.getByText('1150.00').first()).toBeVisible();
+    await expect(page.getByText(/1,?150\.00/).first()).toBeVisible();
 
     await page.getByRole('button', { name: 'Issue' }).click();
     await expect(page.getByText('Issued', { exact: true }).first()).toBeVisible();

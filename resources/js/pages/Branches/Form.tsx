@@ -6,6 +6,7 @@ import { controlClassName, FormField } from '@/components/FormField';
 import { PageHeader } from '@/components/PageHeader';
 import { useI18n } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout';
+import { optionLabel } from '@/lib/labels';
 
 type BranchFormData = {
     id: string;
@@ -95,7 +96,7 @@ export default function BranchForm({
                     <select className={controlClassName} value={form.data.status} onChange={(event) => form.setData('status', event.target.value)}>
                         {statuses.map((status) => (
                             <option key={status} value={status}>
-                                {status}
+                                {optionLabel(t.labels, status)}
                             </option>
                         ))}
                     </select>

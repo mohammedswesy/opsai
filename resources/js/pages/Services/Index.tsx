@@ -11,6 +11,7 @@ import { SearchInput } from '@/components/SearchInput';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useI18n } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout';
+import { useFormat } from '@/lib/format';
 import type { Paginator } from '@/types/page';
 
 type ServiceRow = {
@@ -32,6 +33,7 @@ export default function Index({
     canManage: boolean;
 }) {
     const { t } = useI18n();
+    const format = useFormat();
     const [archiveId, setArchiveId] = useState<string | null>(null);
 
     return (
@@ -61,13 +63,13 @@ export default function Index({
             {services.data.length === 0 ? (
                 <EmptyState title={t.ops.empty} />
             ) : (
-                <DataTable headers={[t.ops.service, t.ops.category, t.ops.price, t.ops.duration, t.ops.status, '']}>
+                <DataTable headers={[t.ops.service, t.ops.category, t.ops.price, t.ops.estimatedDuration, t.ops.status, '']}>
                     {services.data.map((service) => (
                         <tr key={service.id} className="border-b border-zinc-100">
                             <td className="px-4 py-3 font-medium">{service.name}</td>
                             <td className="px-4 py-3">{service.category ?? t.common.none}</td>
-                            <td className="px-4 py-3">{service.base_price ?? t.common.none}</td>
-                            <td className="px-4 py-3">{service.estimated_duration ?? t.common.none}</td>
+                            <td className="px-4 py-3 tabular-nums">{service.base_price !== null ? format.money(service.base_price) : t.common.none}</td>
+                            <td className="px-4 py-3 tabular-nums">{service.estimated_duration !== null ? format.duration(service.estimated_duration) : t.common.none}</td>
                             <td className="px-4 py-3">
                                 <StatusBadge value={service.status} />
                             </td>

@@ -10,6 +10,7 @@ import { SearchInput } from '@/components/SearchInput';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useI18n } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout';
+import { useFormat } from '@/lib/format';
 import type { Paginator } from '@/types/page';
 
 type PaymentRow = {
@@ -25,6 +26,7 @@ type PaymentRow = {
 
 export default function Index({ payments, filters, canManage }: { payments: Paginator<PaymentRow>; filters: { search?: string }; canManage: boolean }) {
     const { t } = useI18n();
+    const format = useFormat();
 
     return (
         <>
@@ -47,13 +49,12 @@ export default function Index({ payments, filters, canManage }: { payments: Pagi
             {payments.data.length === 0 ? (
                 <EmptyState title={t.ops.empty} />
             ) : (
-                <DataTable headers={[t.finance.invoiceNumber, t.finance.amount, t.finance.method, t.ops.status, t.finance.reference, '']}>
+                <DataTable headers={[t.finance.invoiceNumber, t.finance.amount, t.finance.paidAt, t.finance.method, t.ops.status, t.finance.reference, '']}>
                     {payments.data.map((payment) => (
                         <tr key={payment.id} className="border-b border-zinc-100">
                             <td className="px-4 py-3">{payment.invoice?.invoice_number}</td>
-                            <td className="px-4 py-3">
-                                {payment.amount} {payment.currency}
-                            </td>
+                            <td className="px-4 py-3 tabular-nums">{format.money(payment.amount, payment.currency)}</td>
+                            <td className="px-4 py-3 tabular-nums">{format.dateTime(payment.paid_at)}</td>
                             <td className="px-4 py-3">
                                 <StatusBadge value={payment.method} />
                             </td>

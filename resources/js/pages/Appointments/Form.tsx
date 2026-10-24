@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { useI18n } from '@/i18n';
 import { optionLabel } from '@/lib/labels';
 import AppLayout from '@/layouts/AppLayout';
+import { APPOINTMENT_STATUSES } from '@/lib/options';
 import type { Option } from '@/types/page';
 
 type AppointmentForm = {
@@ -112,7 +113,7 @@ export default function Form({
                 </FormField>
                 <FormField label={t.ops.status} error={form.errors.status}>
                     <select className={controlClassName} value={form.data.status} onChange={(event) => form.setData('status', event.target.value)}>
-                        {['scheduled', 'confirmed', 'in_progress', 'completed', 'cancelled', 'no_show'].map((value) => (
+                        {APPOINTMENT_STATUSES.map((value) => (
                             <option key={value} value={value}>
                                 {optionLabel(t.labels, value)}
                             </option>

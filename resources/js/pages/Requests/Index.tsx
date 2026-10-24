@@ -12,6 +12,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { useI18n } from '@/i18n';
 import { optionLabel } from '@/lib/labels';
 import AppLayout from '@/layouts/AppLayout';
+import { PRIORITIES, REQUEST_STATUSES } from '@/lib/options';
 import type { Option, Paginator } from '@/types/page';
 import type { ReactNode } from 'react';
 
@@ -44,7 +45,7 @@ export default function Index({
                 <SearchInput defaultValue={filters.search} placeholder={t.common.search} />
                 <select className={controlClassName} name="status" defaultValue={filters.status ?? ''} aria-label={t.ops.status}>
                     <option value="">{t.ops.status}</option>
-                    {['new', 'qualified', 'scheduled', 'in_progress', 'completed', 'cancelled'].map((value) => (
+                    {REQUEST_STATUSES.map((value) => (
                         <option key={value} value={value}>
                             {optionLabel(t.labels, value)}
                         </option>
@@ -52,7 +53,7 @@ export default function Index({
                 </select>
                 <select className={controlClassName} name="priority" defaultValue={filters.priority ?? ''} aria-label={t.ops.priority}>
                     <option value="">{t.ops.priority}</option>
-                    {['low', 'normal', 'high', 'urgent'].map((value) => (
+                    {PRIORITIES.map((value) => (
                         <option key={value} value={value}>
                             {optionLabel(t.labels, value)}
                         </option>

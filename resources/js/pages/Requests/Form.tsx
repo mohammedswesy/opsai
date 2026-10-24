@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { useI18n } from '@/i18n';
 import { optionLabel } from '@/lib/labels';
 import AppLayout from '@/layouts/AppLayout';
+import { PRIORITIES, REQUEST_SOURCES, REQUEST_STATUSES } from '@/lib/options';
 import type { Option } from '@/types/page';
 
 type RequestForm = {
@@ -95,7 +96,7 @@ export default function Form({
                 </FormField>
                 <FormField label={t.ops.source} error={form.errors.source}>
                     <select className={controlClassName} value={form.data.source} onChange={(event) => form.setData('source', event.target.value)}>
-                        {['manual', 'whatsapp', 'website', 'phone', 'email', 'ai'].map((source) => (
+                        {REQUEST_SOURCES.map((source) => (
                             <option key={source} value={source}>
                                 {optionLabel(t.labels, source)}
                             </option>
@@ -107,7 +108,7 @@ export default function Form({
                 </FormField>
                 <FormField label={t.ops.priority} error={form.errors.priority}>
                     <select className={controlClassName} value={form.data.priority} onChange={(event) => form.setData('priority', event.target.value)}>
-                        {['low', 'normal', 'high', 'urgent'].map((value) => (
+                        {PRIORITIES.map((value) => (
                             <option key={value} value={value}>
                                 {optionLabel(t.labels, value)}
                             </option>
@@ -116,7 +117,7 @@ export default function Form({
                 </FormField>
                 <FormField label={t.ops.status} error={form.errors.status}>
                     <select className={controlClassName} value={form.data.status} onChange={(event) => form.setData('status', event.target.value)}>
-                        {['new', 'qualified', 'scheduled', 'in_progress', 'completed', 'cancelled'].map((value) => (
+                        {REQUEST_STATUSES.map((value) => (
                             <option key={value} value={value}>
                                 {optionLabel(t.labels, value)}
                             </option>

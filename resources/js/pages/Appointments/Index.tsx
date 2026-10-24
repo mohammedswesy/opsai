@@ -10,6 +10,8 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { useI18n } from '@/i18n';
 import { optionLabel } from '@/lib/labels';
 import AppLayout from '@/layouts/AppLayout';
+import { APPOINTMENT_STATUSES } from '@/lib/options';
+import { useFormat } from '@/lib/format';
 import type { Option, Paginator } from '@/types/page';
 
 type AppointmentRow = {
@@ -35,6 +37,7 @@ export default function Index({
     canManage: boolean;
 }) {
     const { t } = useI18n();
+    const format = useFormat();
 
     return (
         <>
@@ -51,7 +54,7 @@ export default function Index({
                 </select>
                 <select className={controlClassName} name="status" defaultValue={filters.status ?? ''} aria-label={t.ops.status}>
                     <option value="">{t.ops.status}</option>
-                    {['scheduled', 'confirmed', 'in_progress', 'completed', 'cancelled', 'no_show'].map((value) => (
+                    {APPOINTMENT_STATUSES.map((value) => (
                         <option key={value} value={value}>
                             {optionLabel(t.labels, value)}
                         </option>
@@ -75,8 +78,8 @@ export default function Index({
                         <tr key={appointment.id}>
                             <td className="px-4 py-3 font-medium text-zinc-900">{appointment.customer?.name}</td>
                             <td className="px-4 py-3">{appointment.technician?.user?.name ?? t.common.none}</td>
-                            <td className="px-4 py-3 tabular-nums">{appointment.scheduled_start}</td>
-                            <td className="px-4 py-3 tabular-nums">{appointment.scheduled_end}</td>
+                            <td className="px-4 py-3 tabular-nums">{format.dateTime(appointment.scheduled_start)}</td>
+                            <td className="px-4 py-3 tabular-nums">{format.sameDay(appointment.scheduled_start, appointment.scheduled_end) ? format.time(appointment.scheduled_end) : format.dateTime(appointment.scheduled_end)}</td>
                             <td className="px-4 py-3">
                                 <StatusBadge value={appointment.status} />
                             </td>

@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { controlClassName, FormField } from '@/components/FormField';
 import { useI18n } from '@/i18n';
 import GuestLayout from '@/layouts/GuestLayout';
+import { optionLabel } from '@/lib/labels';
 
 export default function Register({
     countries,
@@ -76,7 +77,7 @@ export default function Register({
                 <select className={controlClassName} value={form.data.locale} onChange={(event) => form.setData('locale', event.target.value)}>
                     {locales.map((locale) => (
                         <option key={locale} value={locale}>
-                            {locale}
+                            {optionLabel(t.labels, locale)}
                         </option>
                     ))}
                 </select>

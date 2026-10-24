@@ -12,6 +12,8 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { useI18n } from '@/i18n';
 import { optionLabel } from '@/lib/labels';
 import AppLayout from '@/layouts/AppLayout';
+import { INVOICE_STATUSES } from '@/lib/options';
+import { useFormat } from '@/lib/format';
 import type { Option, Paginator } from '@/types/page';
 
 type InvoiceRow = {
@@ -38,6 +40,7 @@ export default function Index({
     canManage: boolean;
 }) {
     const { t } = useI18n();
+    const format = useFormat();
 
     return (
         <>
@@ -55,7 +58,7 @@ export default function Index({
                 <SearchInput defaultValue={filters.search} placeholder={t.common.search} />
                 <select className={controlClassName} name="status" defaultValue={filters.status ?? ''}>
                     <option value="">{t.ops.status}</option>
-                    {['draft', 'issued', 'partially_paid', 'paid', 'overdue', 'cancelled'].map((status) => (
+                    {INVOICE_STATUSES.map((status) => (
                         <option key={status} value={status}>
                             {optionLabel(t.labels, status)}
                         </option>
@@ -87,11 +90,9 @@ export default function Index({
                         <tr key={invoice.id} className="border-b border-zinc-100">
                             <td className="px-4 py-3 font-medium">{invoice.invoice_number}</td>
                             <td className="max-w-48 truncate px-4 py-3" title={invoice.customer?.name}>{invoice.customer?.name}</td>
-                            <td className="px-4 py-3">{invoice.issue_date.slice(0, 10)}</td>
-                            <td className="px-4 py-3">
-                                {invoice.total} {invoice.currency}
-                            </td>
-                            <td className={`px-4 py-3 font-semibold tabular-nums ${Number(invoice.amount_due) > 0 ? 'text-zinc-900' : 'text-zinc-500'}`}>{invoice.amount_due} {invoice.currency}</td>
+                            <td className="px-4 py-3 tabular-nums">{format.date(invoice.issue_date)}</td>
+                            <td className="px-4 py-3 tabular-nums">{format.money(invoice.total, invoice.currency)}</td>
+                            <td className={`px-4 py-3 font-semibold tabular-nums ${Number(invoice.amount_due) > 0 ? 'text-zinc-900' : 'text-zinc-500'}`}>{format.money(invoice.amount_due, invoice.currency)}</td>
                             <td className="px-4 py-3">
                                 <StatusBadge value={invoice.status} />
                             </td>

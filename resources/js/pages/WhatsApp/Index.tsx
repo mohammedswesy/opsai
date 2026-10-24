@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useI18n } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout';
+import { useFormat } from '@/lib/format';
 import type { Paginator } from '@/types/page';
 
 type ConversationRow = {
@@ -21,6 +22,7 @@ type ConversationRow = {
 
 export default function Index({ conversations, simulation }: { conversations: Paginator<ConversationRow>; simulation: boolean }) {
     const { t } = useI18n();
+    const format = useFormat();
     const form = useForm({ from: '', text: '' });
 
     return (
@@ -48,7 +50,10 @@ export default function Index({ conversations, simulation }: { conversations: Pa
                             <span className="min-w-0 flex-1">
                                 <span className="flex items-center justify-between gap-3">
                                     <span className="truncate font-medium text-zinc-900">{conversation.customer ?? t.whatsapp.unknown}</span>
-                                    {conversation.unread_count > 0 ? <span className="rounded-full bg-teal-800 px-2 py-0.5 text-xs font-semibold text-white tabular-nums">{conversation.unread_count}</span> : null}
+                                    <span className="flex shrink-0 items-center gap-2">
+                                        {conversation.last_message_at ? <span className="text-xs text-zinc-500 tabular-nums">{format.sameDay(conversation.last_message_at, new Date()) ? format.time(conversation.last_message_at) : format.date(new Date(conversation.last_message_at), 'short')}</span> : null}
+                                        {conversation.unread_count > 0 ? <span className="rounded-full bg-teal-800 px-2 py-0.5 text-xs font-semibold text-white tabular-nums">{conversation.unread_count}</span> : null}
+                                    </span>
                                 </span>
                                 <span className="mt-0.5 block truncate text-sm text-zinc-600" title={conversation.preview ?? ''}>{conversation.preview}</span>
                                 <span className="mt-2 block"><StatusBadge value={conversation.status} /></span>

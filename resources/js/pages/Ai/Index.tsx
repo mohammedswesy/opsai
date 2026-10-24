@@ -28,7 +28,8 @@ export default function Index({
     branches: Option[];
     branchId: string | null;
 }) {
-    const { t } = useI18n();
+    const { t, locale } = useI18n();
+    const toolLabel = (name: string): string => (t.ai.tools as Record<string, string>)[name] ?? name;
     const [thread, setThread] = useState<ChatMessage[]>(messages);
     const [conversationId, setConversationId] = useState<string | null>(active?.id ?? null);
     const conversationRef = useRef<string | null>(active?.id ?? null);
@@ -171,13 +172,13 @@ export default function Index({
                                 {message.role === 'user' ? t.ai.you : message.role === 'tool' ? t.ai.toolResult : t.ai.title}
                             </p>
                             {message.role === 'tool' ? (
-                                <p className="break-words text-zinc-600">{message.metadata?.tool ?? message.content}</p>
+                                <p className="break-words text-zinc-600">{message.metadata?.tool ? toolLabel(message.metadata.tool) : message.content}</p>
                             ) : (
                                 <p className="whitespace-pre-wrap break-words">{message.content}</p>
                             )}
                         </article>
                     ))}
-                    {toolsUsed.length > 0 ? <p className="text-xs text-zinc-500">{t.ai.checked}: {toolsUsed.join(', ')}</p> : null}
+                    {toolsUsed.length > 0 ? <p className="text-xs text-zinc-500">{t.ai.checked}: {toolsUsed.map(toolLabel).join(locale === 'ar' ? '، ' : ', ')}</p> : null}
                     {loading ? <p className="text-sm text-zinc-500">{t.ai.thinking}</p> : null}
                     {error ? (
                         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 shadow-sm" role="alert">
@@ -189,7 +190,7 @@ export default function Index({
                     ) : null}
                     {pending ? (
                         <section className="max-w-md rounded-xl border-2 border-teal-700 bg-teal-50 p-4 shadow-sm" data-testid="ai-confirmation">
-                            <h3 className="mb-3 font-medium">{pending.tool_name}</h3>
+                            <h3 className="mb-3 font-medium">{toolLabel(pending.tool_name)}</h3>
                             <dl className="space-y-2 text-sm">
                                 {pending.preview.filter((row) => row.value !== '').map((row) => (
                                     <div key={row.key}>

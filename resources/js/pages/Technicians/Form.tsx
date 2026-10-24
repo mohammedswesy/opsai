@@ -7,9 +7,8 @@ import { PageHeader } from '@/components/PageHeader';
 import { useI18n } from '@/i18n';
 import { optionLabel } from '@/lib/labels';
 import AppLayout from '@/layouts/AppLayout';
+import { AVAILABILITY_STATUSES, SKILLS } from '@/lib/options';
 import type { Option } from '@/types/page';
-
-const skillNames = ['hvac', 'electrical', 'plumbing', 'cleaning', 'pest_control'];
 
 type TechnicianForm = {
     id: string;
@@ -93,7 +92,7 @@ export default function Form({
                 </FormField>
                 <FormField label={t.ops.availability} error={form.errors.availability_status}>
                     <select className={controlClassName} value={form.data.availability_status} onChange={(event) => form.setData('availability_status', event.target.value)}>
-                        {['available', 'busy', 'unavailable', 'off_duty'].map((value) => (
+                        {AVAILABILITY_STATUSES.map((value) => (
                             <option key={value} value={value}>
                                 {optionLabel(t.labels, value)}
                             </option>
@@ -122,7 +121,7 @@ export default function Form({
                                     form.setData('skills', skills);
                                 }}
                             >
-                                {skillNames.map((name) => (
+                                {SKILLS.map((name) => (
                                     <option key={name} value={name}>
                                         {optionLabel(t.labels, name)}
                                     </option>

@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { PageHeader } from '@/components/PageHeader';
 import { useI18n } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout';
+import { optionLabel } from '@/lib/labels';
 
 type Member = {
     id: string;
@@ -62,7 +63,7 @@ export default function UsersIndex({
                         <select className={controlClassName} value={form.data.role} onChange={(event) => form.setData('role', event.target.value)}>
                             {assignableRoles.map((role) => (
                                 <option key={role} value={role}>
-                                    {role}
+                                    {optionLabel(t.labels, role)}
                                 </option>
                             ))}
                         </select>
@@ -111,7 +112,7 @@ export default function UsersIndex({
                                 <tr key={member.id} className="border-t border-zinc-100">
                                     <td className="px-4 py-3">{member.name}</td>
                                     <td className="px-4 py-3">{member.email}</td>
-                                    <td className="px-4 py-3">{member.role}</td>
+                                    <td className="px-4 py-3">{optionLabel(t.labels, member.role)}</td>
                                     {canManage ? (
                                         <td className="px-4 py-3 text-end">
                                             <button type="button" className="text-red-700" onClick={() => setPendingId(member.id)}>

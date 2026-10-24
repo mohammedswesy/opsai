@@ -8,6 +8,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { useI18n } from '@/i18n';
 import { optionLabel } from '@/lib/labels';
 import AppLayout from '@/layouts/AppLayout';
+import { useFormat } from '@/lib/format';
 
 type MessageRow = {
     id: string;
@@ -15,6 +16,7 @@ type MessageRow = {
     author: string;
     text: string | null;
     status: string;
+    created_at: string | null;
 };
 
 export default function Show({
@@ -29,6 +31,7 @@ export default function Show({
     simulation: boolean;
 }) {
     const { t } = useI18n();
+    const format = useFormat();
     const reply = useForm({ message: '' });
     const inbound = useForm({ from: conversation.phone, text: '' });
 
@@ -55,7 +58,7 @@ export default function Show({
                         >
                             <p className={`text-xs font-medium ${outbound ? 'text-teal-100' : 'text-zinc-500'}`}>{author}</p>
                             <p className={`mt-1 whitespace-pre-wrap break-words text-sm ${outbound ? 'text-white' : 'text-zinc-900'}`}>{message.text}</p>
-                            <p className={`mt-1 text-xs ${outbound ? 'text-teal-100' : 'text-zinc-400'}`}>{optionLabel(t.labels, message.status)}</p>
+                            <p className={`mt-1 text-xs ${outbound ? 'text-teal-100' : 'text-zinc-400'}`}>{message.created_at ? <span className="tabular-nums">{format.time(message.created_at)} · </span> : null}{optionLabel(t.labels, message.status)}</p>
                         </article>
                     );
                 })}

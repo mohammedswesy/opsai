@@ -12,6 +12,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { useI18n } from '@/i18n';
 import { optionLabel } from '@/lib/labels';
 import AppLayout from '@/layouts/AppLayout';
+import { useFormat } from '@/lib/format';
 import type { Paginator } from '@/types/page';
 
 type TaskRow = {
@@ -26,6 +27,7 @@ type TaskRow = {
 
 export default function Index({ tasks, filters, canManage }: { tasks: Paginator<TaskRow>; filters: { search?: string; status?: string }; canManage: boolean }) {
     const { t } = useI18n();
+    const format = useFormat();
 
     return (
         <>
@@ -69,7 +71,7 @@ export default function Index({ tasks, filters, canManage }: { tasks: Paginator<
                             <td className="px-4 py-3">
                                 <StatusBadge value={task.status} />
                             </td>
-                            <td className="px-4 py-3">{task.due_at ?? t.common.none}</td>
+                            <td className="px-4 py-3 tabular-nums">{task.due_at ? format.dateTime(task.due_at) : t.common.none}</td>
                             <td className="px-4 py-3 text-end">
                                 {canManage ? (
                                     <Link href={`/tasks/${task.id}/edit`} className="text-teal-800">

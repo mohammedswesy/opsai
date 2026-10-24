@@ -6,6 +6,7 @@ import { FlashMessage, LocaleSwitch, NavigationProgress, useDocumentLocale } fro
 import { VisitProvider } from '@/components/VisitState';
 import { useI18n } from '@/i18n';
 import { optionLabel } from '@/lib/labels';
+import { can } from '@/lib/permissions';
 
 const NAV_GROUPS_KEY = 'opsai.nav.groups';
 
@@ -27,10 +28,6 @@ function readCollapsedGroups(): Record<string, boolean> {
     } catch {
         return {};
     }
-}
-
-function can(permissions: string[], permission: string): boolean {
-    return permissions.includes('*') || permissions.includes(permission);
 }
 
 function isCurrent(href: string, url: string): boolean {

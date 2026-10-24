@@ -1,4 +1,4 @@
-import { router, usePage } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import type { AxiosError } from 'axios';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
@@ -13,7 +13,10 @@ import { PriorityBadge } from '@/components/PriorityBadge';
 import { RecordList } from '@/components/RecordList';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useI18n } from '@/i18n';
+import { useFormat } from '@/lib/format';
 import { optionLabel } from '@/lib/labels';
+import { SKILLS } from '@/lib/options';
+import { useCan } from '@/lib/permissions';
 import AppLayout from '@/layouts/AppLayout';
 
 type Job = {
@@ -100,8 +103,6 @@ type DragState = {
     originY: number;
 };
 
-const SKILLS = ['hvac', 'electrical', 'plumbing', 'cleaning', 'pest_control'];
-
 const accents: Record<string, string> = {
     hvac: 'border-s-sky-600',
     electrical: 'border-s-amber-500',
@@ -149,7 +150,7 @@ function skillKey(category: string | null): string | null {
 
     const key = category.trim().toLowerCase().replace(/\s+/g, '_');
 
-    return SKILLS.includes(key) ? key : null;
+    return (SKILLS as readonly string[]).includes(key) ? key : null;
 }
 
 function matchesSkill(category: string | null, skills: string[]): boolean {
@@ -235,7 +236,13 @@ function Ring({ label, value, total }: { label: string; value: number; total: nu
 
 export default function Index({ board }: { board: Board }) {
     const { t } = useI18n();
-    const permissions = usePage().props.permissions;
+    const can = useCan();
+    const format = useFormat();
+    const categoryLabel = (category: string): string => {
+        const key = skillKey(category);
+
+        return key ? optionLabel(t.labels, key) : category;
+    };
     const [skill, setSkill] = useState('');
     const [search, setSearch] = useState('');
     const [unassignedJob, setUnassignedJob] = useState<Unassigned | null>(null);
@@ -269,8 +276,8 @@ export default function Index({ board }: { board: Board }) {
         return (skill === '' || skillKey(job.category) === skill || skillKey(job.category) === null) && (query === '' || haystack.includes(query));
     });
     const nowMinutes = clockMinutes(board.now);
-    const canSchedule = board.can_create_appointment && (permissions.includes('*') || permissions.includes('appointments.manage'));
-    const canAssign = board.can_create_work_order && (permissions.includes('*') || permissions.includes('work_orders.manage'));
+    const canSchedule = board.can_create_appointment && can('appointments.manage');
+    const canAssign = board.can_create_work_order && can('work_orders.manage');
     const dayEmpty = board.counts.total === 0;
     const filteredEmpty = technicians.length === 0 && unassigned.length === 0 && !dayEmpty;
     const ranked = unassignedJob ? rankTechnicians(technicians, unassignedJob, workStart, workEnd) : [];
@@ -480,12 +487,12 @@ export default function Index({ board }: { board: Board }) {
                                         <p className="text-sm font-medium text-zinc-900">{job.title}</p>
                                         <p className="mt-1 font-mono text-xs text-zinc-500">{job.reference}</p>
                                         <p className="mt-1 text-xs text-zinc-500">
-                                            {job.requested_at ? job.requested_at.slice(11, 16) : t.common.none}
+                                            {job.requested_at ? format.time(job.requested_at) : t.common.none}
                                             {job.area ? ` · ${job.area}` : ''}
                                         </p>
                                         <div className="mt-2 flex flex-wrap gap-1">
                                             <PriorityBadge value={job.priority} />
-                                            {job.category ? <Chip tone="brand">{job.category}</Chip> : null}
+                                            {job.category ? <Chip tone="brand">{categoryLabel(job.category)}</Chip> : null}
                                         </div>
                                     </button>
                                 ))}
@@ -499,7 +506,7 @@ export default function Index({ board }: { board: Board }) {
                                 {board.nearest_day ? (
                                     <div className="flex justify-center">
                                         <Button variant="secondary" onClick={() => visit(board.nearest_day ?? board.date)}>
-                                            {t.dispatch.nearestDay}: {board.nearest_day}
+                                            {t.dispatch.nearestDay}: {format.date(board.nearest_day)}
                                         </Button>
                                     </div>
                                 ) : null}
@@ -517,7 +524,7 @@ export default function Index({ board }: { board: Board }) {
                                                     <button key={`${job.id}-agenda`} type="button" className={`w-full rounded-lg px-3 py-2 text-start ${blockClass(job)}`} onClick={() => openJob(job)}>
                                                         <p className="text-sm font-medium">{job.title}</p>
                                                         <p className="font-mono text-[10px] text-zinc-500">{job.reference}</p>
-                                                        <p className="text-xs tabular-nums text-zinc-500">{job.start?.slice(11, 16)} – {job.end?.slice(11, 16)}</p>
+                                                        <p className="text-xs tabular-nums text-zinc-500">{format.time(job.start)} – {format.time(job.end)}</p>
                                                         <p className="truncate text-xs text-zinc-500">{job.customer_name}</p>
                                                         <StatusBadge value={job.status} />
                                                     </button>
@@ -641,7 +648,7 @@ export default function Index({ board }: { board: Board }) {
                             ))}
                         </tbody>
                     </table>
-                    <p className="px-4 pb-4 text-xs text-zinc-500">{t.dispatch.workingDay}</p>
+                    <p className="px-4 pb-4 text-xs text-zinc-500">{t.dispatch.workingDay.replace('{start}', format.time(board.hours.work_start)).replace('{end}', format.time(board.hours.work_end))}</p>
                 </Card>
                 <Card className="space-y-4 p-4 shadow-sm">
                     <h2 className="text-sm font-semibold text-zinc-900">{t.dispatch.overview}</h2>
@@ -698,12 +705,12 @@ export default function Index({ board }: { board: Board }) {
                         </div>
                         <div>
                             <dt className="text-zinc-500">{t.dispatch.time}</dt>
-                            <dd className="tabular-nums">{selected.start?.slice(11, 16)} – {selected.end?.slice(11, 16)}</dd>
+                            <dd className="tabular-nums">{format.time(selected.start)} – {format.time(selected.end)}</dd>
                         </div>
                         <div className="flex flex-wrap gap-1">
                             <StatusBadge value={selected.status} />
                             {selected.priority ? <PriorityBadge value={selected.priority} /> : null}
-                            {selected.category ? <Chip tone="brand">{selected.category}</Chip> : null}
+                            {selected.category ? <Chip tone="brand">{categoryLabel(selected.category)}</Chip> : null}
                         </div>
                     </dl>
                     {canSchedule && selected.appointment_id === undefined ? (
@@ -740,7 +747,7 @@ export default function Index({ board }: { board: Board }) {
                         </form>
                     ) : null}
                     <div className="mt-4 flex flex-wrap gap-2">
-                        {selected.service_request_id && (permissions.includes('*') || permissions.includes('requests.view')) ? (
+                        {selected.service_request_id && can('requests.view') ? (
                             <ButtonLink href={`/requests/${selected.service_request_id}`} variant="secondary">
                                 {t.ops.relatedRequest}
                             </ButtonLink>

@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { useI18n } from '@/i18n';
 import { optionLabel } from '@/lib/labels';
 import AppLayout from '@/layouts/AppLayout';
+import { PRIORITIES } from '@/lib/options';
 import type { Option } from '@/types/page';
 
 export default function Form({
@@ -107,7 +108,7 @@ export default function Form({
                 </FormField>
                 <FormField label={t.ops.priority} error={form.errors.priority}>
                     <select className={controlClassName} value={form.data.priority} onChange={(event) => form.setData('priority', event.target.value)}>
-                        {['low', 'normal', 'high', 'urgent'].map((value) => (
+                        {PRIORITIES.map((value) => (
                             <option key={value} value={value}>
                                 {optionLabel(t.labels, value)}
                             </option>

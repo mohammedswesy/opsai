@@ -15,6 +15,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { useI18n } from '@/i18n';
 import { optionLabel } from '@/lib/labels';
 import AppLayout from '@/layouts/AppLayout';
+import { AVAILABILITY_STATUSES } from '@/lib/options';
 import type { Option, Paginator } from '@/types/page';
 
 type TechnicianRow = {
@@ -51,7 +52,7 @@ export default function Index({
                 <SearchInput defaultValue={filters.search} placeholder={t.common.search} />
                 <select className={controlClassName} name="availability_status" defaultValue={filters.availability_status ?? ''} aria-label={t.ops.availability}>
                     <option value="">{t.ops.availability}</option>
-                    {['available', 'busy', 'unavailable', 'off_duty'].map((value) => (
+                    {AVAILABILITY_STATUSES.map((value) => (
                         <option key={value} value={value}>
                             {optionLabel(t.labels, value)}
                         </option>

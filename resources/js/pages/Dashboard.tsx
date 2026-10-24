@@ -9,6 +9,8 @@ import { KpiCard } from '@/components/KpiCard';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useI18n } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout';
+import { useFormat } from '@/lib/format';
+import { useCan } from '@/lib/permissions';
 import type { Option } from '@/types/page';
 
 type Metrics = {
@@ -46,46 +48,8 @@ const avatarTones = [
     'bg-amber-50 text-amber-800',
 ];
 
-function can(permissions: string[], permission: string): boolean {
-    return permissions.includes('*') || permissions.includes(permission);
-}
-
 function fill(template: string, values: Record<string, number>): string {
     return Object.entries(values).reduce((text, [key, value]) => text.replaceAll(`{${key}}`, String(value)), template);
-}
-
-function calendarDate(iso: string): Date | null {
-    const [year, month, day] = iso.slice(0, 10).split('-').map(Number);
-
-    if (!year || !month || !day) {
-        return null;
-    }
-
-    return new Date(year, month - 1, day);
-}
-
-function formatDate(iso: string, locale: string, withYear = true): string {
-    const date = calendarDate(iso);
-
-    if (!date) {
-        return iso.slice(0, 10);
-    }
-
-    return new Intl.DateTimeFormat(locale === 'ar' ? 'ar' : 'en', withYear ? { day: 'numeric', month: 'short', year: 'numeric' } : { day: 'numeric', month: 'short' }).format(date);
-}
-
-function money(amount: string, currency: string, locale: string): string {
-    const value = Number(amount);
-
-    if (!Number.isFinite(value)) {
-        return `${amount} ${currency}`;
-    }
-
-    try {
-        return new Intl.NumberFormat(locale === 'ar' ? 'ar-SA' : 'en', { style: 'currency', currency, maximumFractionDigits: 2 }).format(value);
-    } catch {
-        return `${amount} ${currency}`;
-    }
 }
 
 function greetingKey(hour: number): 'goodMorning' | 'goodAfternoon' | 'goodEvening' {
@@ -112,10 +76,12 @@ export default function Dashboard({
     filters: { branch_id?: string; from?: string; to?: string };
 }) {
     const { t, locale } = useI18n();
-    const { auth, permissions } = usePage().props;
+    const { auth } = usePage().props;
+    const can = useCan();
+    const format = useFormat();
     const hour = new Date().getHours();
     const name = auth.user?.name ?? '';
-    const today = new Intl.DateTimeFormat(locale === 'ar' ? 'ar' : 'en', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
+    const today = format.date(new Date(), 'long');
     const waiting = metrics.open_requests + metrics.pending_tasks;
     const summary = waiting === 0 && metrics.todays_appointments === 0 && metrics.active_work_orders === 0
         ? t.dashboard.summaryQuiet
@@ -131,8 +97,8 @@ export default function Dashboard({
     const ordersEmpty = metrics.work_orders_by_status.every((row) => row.count === 0);
     const financeDaysEmpty = finance?.by_day.every((day) => Number(day.revenue) === 0 && Number(day.payments) === 0) ?? true;
     const invoiceStatusEmpty = finance?.invoice_status.every((row) => row.count === 0) ?? true;
-    const canRequest = can(permissions, 'requests.manage');
-    const canDispatch = can(permissions, 'appointments.view') || can(permissions, 'work_orders.view');
+    const canRequest = can('requests.manage');
+    const canDispatch = can('appointments.view') || can('work_orders.view');
 
     function apply(next: { branch_id?: string; from?: string; to?: string }) {
         router.get('/', { ...filters, ...next }, { preserveState: true });
@@ -180,8 +146,8 @@ export default function Dashboard({
                             ))}
                         </select>
                     </label>
-                    <DateField label={t.dashboard.from} value={filters.from ?? ''} locale={locale} placeholder={t.dashboard.pickDate} onChange={(from) => apply({ from })} />
-                    <DateField label={t.dashboard.to} value={filters.to ?? ''} locale={locale} placeholder={t.dashboard.pickDate} onChange={(to) => apply({ to })} />
+                    <DateField label={t.dashboard.from} value={filters.from ?? ''} placeholder={t.dashboard.pickDate} onChange={(from) => apply({ from })} />
+                    <DateField label={t.dashboard.to} value={filters.to ?? ''} placeholder={t.dashboard.pickDate} onChange={(to) => apply({ to })} />
                 </form>
 
             <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -232,7 +198,7 @@ export default function Dashboard({
                 <Card className="p-5 lg:col-span-2">
                     <h2 className="text-[15px] leading-5 font-semibold text-zinc-900">{t.dashboard.requestsByDay}</h2>
                     {requestsEmpty ? <p className="mt-8 text-sm text-zinc-500">{t.dashboard.emptyChart}</p> : (
-                        <ColumnChart rows={metrics.requests_by_day.map((day) => ({ key: day.date, date: day.date, value: day.count, title: `${formatDate(day.date, locale)} · ${day.count}` }))} locale={locale} />
+                        <ColumnChart rows={metrics.requests_by_day.map((day) => ({ key: day.date, date: day.date, value: day.count, title: `${format.date(day.date)} · ${day.count}` }))} />
                     )}
                 </Card>
                 <Card className="p-5">
@@ -259,14 +225,14 @@ export default function Dashboard({
                 <section className="space-y-3" data-testid="finance-metrics">
                     <h2 className="text-[15px] leading-5 font-semibold text-zinc-900">{t.nav.finance}</h2>
                     <div className="grid gap-3 sm:grid-cols-2">
-                        <KpiCard icon={Receipt} tone="warning" label={t.dashboard.outstanding} value={money(finance.outstanding, finance.currency, locale)} />
-                        <KpiCard icon={CircleDollarSign} tone="danger" label={t.dashboard.overdue} value={money(finance.overdue, finance.currency, locale)} />
+                        <KpiCard icon={Receipt} tone="warning" label={t.dashboard.outstanding} value={format.money(finance.outstanding, finance.currency)} />
+                        <KpiCard icon={CircleDollarSign} tone="danger" label={t.dashboard.overdue} value={format.money(finance.overdue, finance.currency)} />
                     </div>
                     <div className="grid gap-3 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.8fr)]">
                     <Card className="p-5">
                         <div className="mb-1 flex items-baseline justify-between gap-3">
                             <h3 className="text-[15px] leading-5 font-semibold text-zinc-900">{t.dashboard.revenueByDay}</h3>
-                            <p className="text-sm font-medium text-zinc-700 tabular-nums">{money(finance.revenue, finance.currency, locale)}</p>
+                            <p className="text-sm font-medium text-zinc-700 tabular-nums">{format.money(finance.revenue, finance.currency)}</p>
                         </div>
                         {financeDaysEmpty ? <p className="mt-8 text-sm text-zinc-500">{t.dashboard.emptyChart}</p> : (
                             <ColumnChart
@@ -275,9 +241,8 @@ export default function Dashboard({
                                     key: day.date,
                                     date: day.date,
                                     value: Number(day.revenue),
-                                    title: `${formatDate(day.date, locale)} · ${money(day.revenue, finance.currency, locale)}`,
+                                    title: `${format.date(day.date)} · ${format.money(day.revenue, finance.currency)}`,
                                 }))}
-                                locale={locale}
                             />
                         )}
                     </Card>
@@ -301,9 +266,9 @@ export default function Dashboard({
                     </Card>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-3">
-                        <KpiCard size="quiet" icon={Receipt} label={t.dashboard.invoiced} value={money(finance.invoiced, finance.currency, locale)} />
-                        <KpiCard size="quiet" icon={Wallet} tone="success" label={t.dashboard.paid} value={money(finance.paid, finance.currency, locale)} />
-                        <KpiCard size="quiet" icon={Wallet} tone="info" label={t.dashboard.todaysPayments} value={money(finance.todays_payments, finance.currency, locale)} />
+                        <KpiCard size="quiet" icon={Receipt} label={t.dashboard.invoiced} value={format.money(finance.invoiced, finance.currency)} />
+                        <KpiCard size="quiet" icon={Wallet} tone="success" label={t.dashboard.paid} value={format.money(finance.paid, finance.currency)} />
+                        <KpiCard size="quiet" icon={Wallet} tone="info" label={t.dashboard.todaysPayments} value={format.money(finance.todays_payments, finance.currency)} />
                     </div>
                 </section>
             ) : null}
@@ -321,7 +286,9 @@ export default function Dashboard({
     );
 }
 
-function DateField({ label, value, locale, placeholder, onChange }: { label: string; value: string; locale: string; placeholder: string; onChange: (value: string) => void }) {
+function DateField({ label, value, placeholder, onChange }: { label: string; value: string; placeholder: string; onChange: (value: string) => void }) {
+    const format = useFormat();
+
     return (
         <label className="block min-w-44">
             <span className="mb-1.5 block text-xs font-medium text-zinc-500">{label}</span>
@@ -334,14 +301,15 @@ function DateField({ label, value, locale, placeholder, onChange }: { label: str
                     onChange={(event) => onChange(event.target.value)}
                 />
                 <span className="pointer-events-none absolute inset-y-0 start-3 end-9 flex items-center truncate text-sm text-zinc-800">
-                    {value ? formatDate(value, locale) : <span className="text-zinc-400">{placeholder}</span>}
+                    {value ? format.date(value) : <span className="text-zinc-400">{placeholder}</span>}
                 </span>
             </span>
         </label>
     );
 }
 
-function ColumnChart({ rows, locale, gradient = false }: { rows: { key: string; date: string; value: number; title: string }[]; locale: string; gradient?: boolean }) {
+function ColumnChart({ rows, gradient = false }: { rows: { key: string; date: string; value: number; title: string }[]; gradient?: boolean }) {
+    const format = useFormat();
     const max = Math.max(1, ...rows.map((row) => row.value));
     const gradientId = useId().replace(/:/g, '');
 
@@ -380,7 +348,7 @@ function ColumnChart({ rows, locale, gradient = false }: { rows: { key: string; 
             <div className="mt-2 flex">
                 {rows.map((row, index) => (
                     <span key={row.key} className="min-w-0 flex-1 truncate text-center text-[10px] text-zinc-400 tabular-nums" title={row.title}>
-                        {index % 2 === 0 ? formatDate(row.date, locale, false) : ''}
+                        {index % 2 === 0 ? format.date(row.date, 'short') : ''}
                     </span>
                 ))}
             </div>
