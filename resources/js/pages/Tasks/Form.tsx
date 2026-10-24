@@ -37,7 +37,7 @@ export default function Form({ task, branches, members }: { task: TaskForm | nul
 
     return (
         <>
-            <PageHeader title={task ? t.common.edit : t.ops.create} subtitle={t.nav.tasks} />
+            <PageHeader parent={{ label: t.nav.tasks, href: '/tasks' }} title={task ? t.common.edit : t.ops.create} subtitle={t.nav.tasks} />
             <CardForm className="grid max-w-3xl gap-4 p-5" onSubmit={(event) => {
                     event.preventDefault();
                     const payload = {

@@ -31,7 +31,7 @@ export default function Settings({ integration }: { integration: IntegrationView
 
     return (
         <>
-            <PageHeader title={t.whatsapp.settings} />
+            <PageHeader parent={{ label: t.nav.whatsapp, href: '/whatsapp' }} title={t.whatsapp.settings} />
             <CardForm className="max-w-xl space-y-4 p-4" onSubmit={(event) => {
                     event.preventDefault();
                     form.put('/settings/integrations/whatsapp');

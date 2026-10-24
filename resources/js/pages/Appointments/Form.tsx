@@ -49,7 +49,7 @@ export default function Form({
 
     return (
         <>
-            <PageHeader title={appointment ? t.common.edit : t.ops.create} subtitle={t.nav.appointments} />
+            <PageHeader parent={{ label: t.nav.appointments, href: '/appointments' }} title={appointment ? t.common.edit : t.ops.create} subtitle={t.nav.appointments} />
             <CardForm className="grid max-w-3xl gap-4 p-5" onSubmit={(event) => {
                     event.preventDefault();
                     const payload = {

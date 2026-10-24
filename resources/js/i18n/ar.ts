@@ -23,6 +23,9 @@ export const ar: Messages = {
         backToLogin: 'العودة لتسجيل الدخول',
         english: 'English',
         arabic: 'العربية',
+        tagline: 'الطلبات والتوزيع والعمل الميداني والفوترة لفرق الخدمة.',
+        accountSection: 'حسابك',
+        organizationSection: 'منشأتك',
     },
     nav: {
         dashboard: 'لوحة المعلومات',
@@ -58,6 +61,9 @@ export const ar: Messages = {
         noMatches: 'لا توجد نتائج',
         searchCustomers: 'بحث العملاء عن «{query}»',
         searchRequests: 'بحث الطلبات عن «{query}»',
+        yourWork: 'عملك',
+        breadcrumb: 'مسار التنقل',
+        language: 'اللغة',
     },
     dashboard: {
         title: 'لوحة المعلومات',

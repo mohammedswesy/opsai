@@ -48,7 +48,7 @@ export default function Show({ payment, canRefund }: { payment: Payment; canRefu
 
     return (
         <>
-            <RecordHeader
+            <RecordHeader parent={{ label: t.nav.payments, href: '/payments' }}
                 eyebrow={t.detail.payment}
                 title={format.money(payment.amount, payment.currency)}
                 badges={

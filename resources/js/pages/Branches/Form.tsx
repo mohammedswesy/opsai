@@ -47,7 +47,7 @@ export default function BranchForm({
 
     return (
         <>
-            <PageHeader title={branch ? t.branches.edit : t.branches.create} />
+            <PageHeader parent={{ label: t.branches.title, href: '/branches' }} title={branch ? t.branches.edit : t.branches.create} />
             <CardForm className="max-w-2xl space-y-4 p-5" onSubmit={(event) => {
                     event.preventDefault();
                     if (branch) {

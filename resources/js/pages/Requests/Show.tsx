@@ -58,7 +58,7 @@ export default function Show({ serviceRequest, canManage }: { serviceRequest: Se
 
     return (
         <>
-            <RecordHeader
+            <RecordHeader parent={{ label: t.nav.requests, href: '/requests' }}
                 eyebrow={t.ops.relatedRequest}
                 title={serviceRequest.subject}
                 badges={

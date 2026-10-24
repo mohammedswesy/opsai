@@ -31,7 +31,7 @@ export default function Form({
 
     return (
         <>
-            <PageHeader title={t.finance.recordPayment} />
+            <PageHeader parent={{ label: t.nav.payments, href: '/payments' }} title={t.finance.recordPayment} />
             <CardForm className="grid max-w-xl gap-4 p-5" onSubmit={(event) => {
                     event.preventDefault();
                     form.post('/payments');

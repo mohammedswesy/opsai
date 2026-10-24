@@ -78,7 +78,7 @@ export default function Show({
 
     return (
         <>
-            <RecordHeader
+            <RecordHeader parent={{ label: t.nav.customers, href: '/customers' }}
                 eyebrow={typeLabel}
                 title={customer.name}
                 badges={<StatusBadge value={customer.status} />}

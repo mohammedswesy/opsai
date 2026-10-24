@@ -6,6 +6,7 @@ import { Card } from '@/components/Card';
 import { controlClassName } from '@/components/FormField';
 import { Initials } from '@/components/Initials';
 import { KpiCard } from '@/components/KpiCard';
+import { PageTitle } from '@/components/PageTitle';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useI18n } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout';
@@ -106,6 +107,7 @@ export default function Dashboard({
 
     return (
         <div className="space-y-6">
+            <PageTitle title={t.nav.dashboard} />
             <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div className="min-w-0">
                     <p className="text-xs font-medium tracking-wide text-zinc-400 uppercase">{today}</p>

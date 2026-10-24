@@ -37,7 +37,7 @@ export default function Form({
 
     return (
         <>
-            <PageHeader title={t.ops.create} subtitle={t.nav.workOrders} />
+            <PageHeader parent={{ label: t.nav.workOrders, href: '/work-orders' }} title={t.ops.create} subtitle={t.nav.workOrders} />
             <CardForm className="grid max-w-3xl gap-4 p-5" onSubmit={(event) => {
                     event.preventDefault();
                     form.transform((data) => ({

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { PageTitle, type PageParent } from '@/components/PageTitle';
 
 export type RecordMeta = { key: string; label: string; value: ReactNode };
 
@@ -12,15 +13,19 @@ export function RecordHeader({
     badges,
     meta = [],
     actions,
+    parent,
 }: {
     eyebrow?: ReactNode;
-    title: ReactNode;
+    title: string;
+    /** Breadcrumb parent shown in the top bar and added to the tab title. */
+    parent?: PageParent;
     badges?: ReactNode;
     meta?: RecordMeta[];
     actions?: ReactNode;
 }) {
     return (
         <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <PageTitle title={title} parent={parent} />
             <div className="min-w-0">
                 {eyebrow ? <p className="text-caption font-medium text-ink-muted">{eyebrow}</p> : null}
                 <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-2">

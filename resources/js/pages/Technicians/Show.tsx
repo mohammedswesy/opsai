@@ -33,7 +33,7 @@ export default function Show({ technician, canManage }: { technician: Technician
 
     return (
         <>
-            <RecordHeader
+            <RecordHeader parent={{ label: t.nav.technicians, href: '/technicians' }}
                 eyebrow={t.ops.technician}
                 title={technician.user?.name ?? t.ops.technician}
                 badges={

@@ -82,7 +82,7 @@ export default function Show({
 
     return (
         <>
-            <RecordHeader
+            <RecordHeader parent={{ label: t.nav.workOrders, href: '/work-orders' }}
                 eyebrow={t.ops.relatedWorkOrder}
                 title={workOrder.title}
                 badges={

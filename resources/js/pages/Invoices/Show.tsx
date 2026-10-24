@@ -52,7 +52,7 @@ export default function Show({ invoice, canManage, canPay }: { invoice: Invoice;
 
     return (
         <>
-            <RecordHeader
+            <RecordHeader parent={{ label: t.nav.invoices, href: '/invoices' }}
                 eyebrow={t.detail.invoice}
                 title={invoice.invoice_number}
                 badges={<StatusBadge value={invoice.status} />}

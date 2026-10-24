@@ -45,7 +45,7 @@ export default function Form({
 
     return (
         <>
-            <PageHeader title={technician ? t.common.edit : t.ops.create} subtitle={t.nav.technicians} />
+            <PageHeader parent={{ label: t.nav.technicians, href: '/technicians' }} title={technician ? t.common.edit : t.ops.create} subtitle={t.nav.technicians} />
             <CardForm className="grid max-w-3xl gap-4 p-5" onSubmit={(event) => {
                     event.preventDefault();
                     const payload = {

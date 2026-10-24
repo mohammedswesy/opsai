@@ -37,7 +37,7 @@ export default function Show({
 
     return (
         <>
-            <PageHeader title={conversation.customer ?? t.whatsapp.unknown} subtitle={conversation.phone} action={<StatusBadge value={conversation.status} />} />
+            <PageHeader parent={{ label: t.nav.whatsapp, href: '/whatsapp' }} title={conversation.customer ?? t.whatsapp.unknown} subtitle={conversation.phone} action={<StatusBadge value={conversation.status} />} />
             {conversation.status === 'human_required' ? (
                 <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 shadow-sm" role="status">
                     <p className="font-medium">{t.whatsapp.human}</p>

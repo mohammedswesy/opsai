@@ -21,6 +21,9 @@ export const en = {
         backToLogin: 'Back to sign in',
         english: 'English',
         arabic: 'Arabic',
+        tagline: 'Requests, dispatch, field work and billing for service teams.',
+        accountSection: 'Your account',
+        organizationSection: 'Your organization',
     },
     nav: {
         dashboard: 'Dashboard',
@@ -56,6 +59,9 @@ export const en = {
         noMatches: 'No matches',
         searchCustomers: 'Search customers for “{query}”',
         searchRequests: 'Search requests for “{query}”',
+        yourWork: 'Your work',
+        breadcrumb: 'Breadcrumb',
+        language: 'Language',
     },
     dashboard: {
         title: 'Dashboard',

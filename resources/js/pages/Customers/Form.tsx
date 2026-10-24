@@ -47,7 +47,7 @@ export default function Form({ customer, branches }: { customer: Customer | null
 
     return (
         <>
-            <PageHeader title={customer ? t.common.edit : t.ops.create} subtitle={t.nav.customers} />
+            <PageHeader parent={{ label: t.nav.customers, href: '/customers' }} title={customer ? t.common.edit : t.ops.create} subtitle={t.nav.customers} />
             <CardForm className="grid max-w-3xl gap-4 p-5 md:grid-cols-2" onSubmit={(event) => {
                     event.preventDefault();
                     const payload = { ...form.data, branch_id: form.data.branch_id || null };
