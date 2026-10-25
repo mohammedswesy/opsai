@@ -135,6 +135,8 @@ export default function Show({ payment, canRefund }: { payment: Payment; canRefu
             </div>
 
             <ConfirmDialog
+
+                tone="danger"
                 open={confirming}
                 title={t.finance.confirmRefund}
                 confirmLabel={t.common.confirm}

@@ -8,7 +8,7 @@ export function Initials({ name, className = '' }: { name: string; className?: s
         .toUpperCase();
 
     return (
-        <span className={`flex size-8 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-semibold text-blue-700 ${className}`.trim()}>
+        <span className={`flex size-8 shrink-0 items-center justify-center rounded-badge bg-brand-soft text-caption font-semibold text-brand-strong ${className}`.trim()}>
             {letters || '·'}
         </span>
     );

@@ -1,8 +1,9 @@
-import { Button } from '@/components/Button';
+import { Button, ButtonLink } from '@/components/Button';
 import { Card, CardForm } from '@/components/Card';
-import { Link, useForm } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { FormField, controlClassName } from '@/components/FormField';
+import { FormPage } from '@/components/FormPage';
 import { PageHeader } from '@/components/PageHeader';
 import { useI18n } from '@/i18n';
 import { optionLabel } from '@/lib/labels';
@@ -30,9 +31,9 @@ export default function Form({
     const selectedInvoice = invoices.find((invoice) => invoice.id === form.data.invoice_id);
 
     return (
-        <>
+        <FormPage>
             <PageHeader parent={{ label: t.nav.payments, href: '/payments' }} title={t.finance.recordPayment} />
-            <CardForm className="grid max-w-xl gap-4 p-5" onSubmit={(event) => {
+            <CardForm className="grid gap-4 p-5" onSubmit={(event) => {
                     event.preventDefault();
                     form.post('/payments');
                 }}
@@ -48,8 +49,8 @@ export default function Form({
                     </select>
                 </FormField>
                 {form.data.invoice_id ? (
-                    <p className="text-sm text-zinc-600">
-                        {t.finance.outstanding}: <span className="text-lg font-semibold tabular-nums text-zinc-900">{selectedInvoice ? format.money(selectedInvoice.amount_due, selectedInvoice.currency) : null}</span>
+                    <p className="text-body text-ink-secondary">
+                        {t.finance.outstanding}: <span className="text-lg font-semibold tabular-nums text-ink">{selectedInvoice ? format.money(selectedInvoice.amount_due, selectedInvoice.currency) : null}</span>
                     </p>
                 ) : null}
                 <FormField label={t.finance.amount} error={form.errors.amount}>
@@ -74,12 +75,12 @@ export default function Form({
                     <Button variant="primary" type="submit" disabled={form.processing}>
                         {t.common.save}
                     </Button>
-                    <Link href="/payments" className="px-4 py-2 text-sm text-zinc-700">
+                    <ButtonLink variant="ghost" href="/payments">
                         {t.common.cancel}
-                    </Link>
+                    </ButtonLink>
                 </div>
             </CardForm>
-        </>
+        </FormPage>
     );
 }
 

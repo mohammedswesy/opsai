@@ -7,11 +7,11 @@ export function EmptyState({ title, description }: { title: string; description?
 
     return (
         <Card className="border-dashed px-6 py-14 text-center">
-            <span className="mx-auto flex size-10 items-center justify-center rounded-full bg-zinc-50 text-zinc-400">
+            <span className="mx-auto flex size-10 items-center justify-center rounded-badge bg-surface-muted text-ink-subtle">
                 <Inbox className="size-5" />
             </span>
-            <p className="mt-3 text-sm font-medium text-zinc-900">{title}</p>
-            <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500">{description ?? t.common.emptyHint}</p>
+            <p className="mt-3 text-body font-medium text-ink">{title}</p>
+            <p className="mx-auto mt-1 max-w-sm text-body text-ink-muted">{description ?? t.common.emptyHint}</p>
         </Card>
     );
 }

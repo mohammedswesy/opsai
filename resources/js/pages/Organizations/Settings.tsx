@@ -3,6 +3,7 @@ import { Card, CardForm } from '@/components/Card';
 import { useForm } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { controlClassName, FormField } from '@/components/FormField';
+import { FormPage } from '@/components/FormPage';
 import { PageHeader } from '@/components/PageHeader';
 import { useI18n } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout';
@@ -57,9 +58,9 @@ export default function OrganizationSettings({
     });
 
     return (
-        <>
+        <FormPage>
             <PageHeader title={t.organizations.settings} subtitle={t.organizations.settingsSubtitle} />
-            <CardForm className="max-w-2xl space-y-4 p-5" onSubmit={(event) => {
+            <CardForm className=" space-y-4 p-5" onSubmit={(event) => {
                     event.preventDefault();
                     form.put('/organization');
                 }}
@@ -130,7 +131,7 @@ export default function OrganizationSettings({
                     </Button>
                 ) : null}
             </CardForm>
-        </>
+        </FormPage>
     );
 }
 

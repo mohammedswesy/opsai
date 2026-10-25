@@ -34,7 +34,7 @@ export default function GuestLayout({ children, wide = false }: { children: Reac
             </header>
             <main className="flex flex-1 flex-col items-center justify-center px-4 pt-4 pb-12">
                 <p className="mb-6 max-w-md text-center text-body text-ink-secondary">{t.guest.tagline}</p>
-                <div className={`w-full rounded-card border border-line bg-surface p-6 shadow-card sm:p-8 ${wide ? 'max-w-3xl' : 'max-w-md'}`}>
+                <div className={`w-full rounded-card border border-line bg-surface p-6 shadow-card sm:p-8 ${wide ? 'max-w-form-wide' : 'max-w-md'}`}>
                     <FlashMessage />
                     {children}
                 </div>

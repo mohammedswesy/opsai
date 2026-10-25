@@ -2,7 +2,7 @@ import { Link, router } from '@inertiajs/react';
 import { History, Plus, SendHorizontal, ShieldCheck, Sparkles } from 'lucide-react';
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
 import { Button } from '@/components/Button';
-import { controlClassName } from '@/components/FormField';
+import { controlClassName, controlFocusClassName } from '@/components/FormField';
 import { PageTitle } from '@/components/PageTitle';
 import { Sheet } from '@/components/Sheet';
 import { useI18n } from '@/i18n';
@@ -313,7 +313,7 @@ export default function Index({
                         <textarea
                             ref={composerRef}
                             rows={1}
-                            className="max-h-40 min-h-11 w-full resize-none rounded-control border border-line bg-surface px-3 py-2.5 text-body text-ink placeholder:text-ink-subtle"
+                            className={`max-h-40 min-h-11 w-full resize-none rounded-control border border-line bg-surface px-3 py-2.5 text-body text-ink placeholder:text-ink-subtle ${controlFocusClassName}`}
                             value={draft}
                             placeholder={t.ai.placeholder}
                             aria-label={t.ai.placeholder}

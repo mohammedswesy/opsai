@@ -8,6 +8,7 @@ use App\Http\Controllers\Concerns\SharesLookups;
 use App\Http\Requests\AssignWorkOrderRequest;
 use App\Http\Requests\StoreWorkOrderRequest;
 use App\Http\Requests\TransitionWorkOrderRequest;
+use App\Models\Activity;
 use App\Models\Invoice;
 use App\Models\Technician;
 use App\Models\WorkOrder;
@@ -75,6 +76,24 @@ class WorkOrderController extends Controller
             ),
             'canTransition' => request()->user()?->can('transition', $workOrder) ?? false,
             'canInvoice' => request()->user()?->can('create', Invoice::class) ?? false,
+            'activities' => Activity::query()
+                ->with('actor:id,name')
+                ->where('subject_type', $workOrder->getMorphClass())
+                ->where('subject_id', $workOrder->id)
+                ->latest()
+                ->orderByDesc('id')
+                ->limit(50)
+                ->get()
+                ->map(fn (Activity $activity) => [
+                    'id' => $activity->id,
+                    'action' => $activity->action,
+                    'description' => $activity->description,
+                    'actor' => $activity->actor ? ['id' => $activity->actor->id, 'name' => $activity->actor->name] : null,
+                    'from' => $activity->properties['from'] ?? null,
+                    'to' => $activity->properties['to'] ?? null,
+                    'created_at' => $activity->created_at?->toIso8601String(),
+                ])
+                ->values(),
         ]);
     }
 

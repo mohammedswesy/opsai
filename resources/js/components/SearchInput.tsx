@@ -1,3 +1,4 @@
+import { controlFocusClassName } from '@/components/FormField';
 import { Search } from 'lucide-react';
 
 export function SearchInput({
@@ -14,7 +15,7 @@ export function SearchInput({
             <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-ink-subtle" strokeWidth={1.75} aria-hidden="true" />
             <input
                 type="search"
-                className="min-h-10 w-full rounded-control border border-line bg-surface ps-9 pe-3 text-body text-ink placeholder:text-ink-subtle"
+                className={`min-h-10 w-full rounded-control border border-line bg-surface ps-9 pe-3 text-body text-ink placeholder:text-ink-subtle ${controlFocusClassName}`}
                 name={name}
                 defaultValue={defaultValue ?? ''}
                 placeholder={placeholder}

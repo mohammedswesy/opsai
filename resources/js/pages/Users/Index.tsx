@@ -8,6 +8,7 @@ import { controlClassName, FormField } from '@/components/FormField';
 import { DataTable, type Column } from '@/components/DataTable';
 import { Initials } from '@/components/Initials';
 import { RecordList } from '@/components/RecordList';
+import { FormPage } from '@/components/FormPage';
 import { PageHeader } from '@/components/PageHeader';
 import { useI18n } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout';
@@ -94,54 +95,56 @@ export default function UsersIndex({
         <>
             <PageHeader title={t.users.title} subtitle={t.users.subtitle} />
             {canManage ? (
-                <CardForm className="mb-6 grid gap-4 p-5 md:grid-cols-2" onSubmit={(event) => {
-                        event.preventDefault();
-                        form.post('/users', { onSuccess: () => form.reset() });
-                    }}
-                >
-                    <FormField label={t.users.name} error={form.errors.name}>
-                        <input className={controlClassName} value={form.data.name} onChange={(event) => form.setData('name', event.target.value)} />
-                    </FormField>
-                    <FormField label={t.users.email} error={form.errors.email}>
-                        <input className={controlClassName} type="email" value={form.data.email} onChange={(event) => form.setData('email', event.target.value)} />
-                    </FormField>
-                    <FormField label={t.users.password} error={form.errors.password}>
-                        <input className={controlClassName} type="password" value={form.data.password} onChange={(event) => form.setData('password', event.target.value)} />
-                    </FormField>
-                    <FormField label={t.users.role} error={form.errors.role}>
-                        <select className={controlClassName} value={form.data.role} onChange={(event) => form.setData('role', event.target.value)}>
-                            {assignableRoles.map((role) => (
-                                <option key={role} value={role}>
-                                    {optionLabel(t.labels, role)}
-                                </option>
-                            ))}
-                        </select>
-                    </FormField>
-                    <FormField label={t.users.branches}>
-                        <select
-                            multiple
-                            className={controlClassName}
-                            value={form.data.branch_ids}
-                            onChange={(event) =>
-                                form.setData(
-                                    'branch_ids',
-                                    Array.from(event.target.selectedOptions).map((option) => option.value),
-                                )
-                            }
-                        >
-                            {branches.map((branch) => (
-                                <option key={branch.id} value={branch.id}>
-                                    {branch.name}
-                                </option>
-                            ))}
-                        </select>
-                    </FormField>
-                    <div className="md:col-span-2">
-                        <Button variant="primary" type="submit" disabled={form.processing}>
-                            {t.users.add}
-                        </Button>
-                    </div>
-                </CardForm>
+                <FormPage size="wide" className="mb-6">
+                    <CardForm className="grid gap-4 p-5 md:grid-cols-2" onSubmit={(event) => {
+                            event.preventDefault();
+                            form.post('/users', { onSuccess: () => form.reset() });
+                        }}
+                    >
+                        <FormField label={t.users.name} error={form.errors.name}>
+                            <input className={controlClassName} value={form.data.name} onChange={(event) => form.setData('name', event.target.value)} />
+                        </FormField>
+                        <FormField label={t.users.email} error={form.errors.email}>
+                            <input className={controlClassName} type="email" value={form.data.email} onChange={(event) => form.setData('email', event.target.value)} />
+                        </FormField>
+                        <FormField label={t.users.password} error={form.errors.password}>
+                            <input className={controlClassName} type="password" value={form.data.password} onChange={(event) => form.setData('password', event.target.value)} />
+                        </FormField>
+                        <FormField label={t.users.role} error={form.errors.role}>
+                            <select className={controlClassName} value={form.data.role} onChange={(event) => form.setData('role', event.target.value)}>
+                                {assignableRoles.map((role) => (
+                                    <option key={role} value={role}>
+                                        {optionLabel(t.labels, role)}
+                                    </option>
+                                ))}
+                            </select>
+                        </FormField>
+                        <FormField label={t.users.branches}>
+                            <select
+                                multiple
+                                className={controlClassName}
+                                value={form.data.branch_ids}
+                                onChange={(event) =>
+                                    form.setData(
+                                        'branch_ids',
+                                        Array.from(event.target.selectedOptions).map((option) => option.value),
+                                    )
+                                }
+                            >
+                                {branches.map((branch) => (
+                                    <option key={branch.id} value={branch.id}>
+                                        {branch.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </FormField>
+                        <div className="md:col-span-2">
+                            <Button variant="primary" type="submit" disabled={form.processing}>
+                                {t.users.add}
+                            </Button>
+                        </div>
+                    </CardForm>
+                </FormPage>
             ) : null}
             <RecordList empty={members.length === 0} emptyTitle={t.users.empty} loading="inline">
                 <DataTable
@@ -153,6 +156,7 @@ export default function UsersIndex({
                 />
             </RecordList>
             <ConfirmDialog
+                tone="danger"
                 open={pendingId !== null}
                 title={t.users.removeConfirm}
                 confirmLabel={t.common.confirm}

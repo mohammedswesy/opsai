@@ -1,19 +1,20 @@
-import { optionLabel } from '@/lib/labels';
+import { Badge, type BadgeTone } from '@/components/Badge';
 import { useI18n } from '@/i18n';
+import { optionLabel } from '@/lib/labels';
 
-const tones: Record<string, string> = {
-    low: 'bg-zinc-100 text-zinc-600',
-    normal: 'bg-sky-50 text-sky-700',
-    high: 'bg-amber-50 text-amber-700',
-    urgent: 'bg-red-50 text-red-700',
+const tones: Record<string, BadgeTone> = {
+    low: 'quiet',
+    normal: 'info',
+    high: 'warning',
+    urgent: 'danger',
 };
 
 export function PriorityBadge({ value }: { value: string }) {
     const { t } = useI18n();
 
     return (
-        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${tones[value] ?? 'bg-zinc-100 text-zinc-700'}`}>
+        <Badge tone={tones[value] ?? 'neutral'} outlined={false}>
             {optionLabel(t.labels, value)}
-        </span>
+        </Badge>
     );
 }

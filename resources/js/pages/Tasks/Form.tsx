@@ -1,8 +1,9 @@
-import { Button } from '@/components/Button';
+import { Button, ButtonLink } from '@/components/Button';
 import { Card, CardForm } from '@/components/Card';
-import { Link, useForm } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { FormField, controlClassName } from '@/components/FormField';
+import { FormPage } from '@/components/FormPage';
 import { PageHeader } from '@/components/PageHeader';
 import { useI18n } from '@/i18n';
 import { optionLabel } from '@/lib/labels';
@@ -36,9 +37,9 @@ export default function Form({ task, branches, members }: { task: TaskForm | nul
     });
 
     return (
-        <>
+        <FormPage>
             <PageHeader parent={{ label: t.nav.tasks, href: '/tasks' }} title={task ? t.common.edit : t.ops.create} subtitle={t.nav.tasks} />
-            <CardForm className="grid max-w-3xl gap-4 p-5" onSubmit={(event) => {
+            <CardForm className="grid gap-4 p-5" onSubmit={(event) => {
                     event.preventDefault();
                     const payload = {
                         ...form.data,
@@ -105,12 +106,12 @@ export default function Form({ task, branches, members }: { task: TaskForm | nul
                     <Button variant="primary" type="submit" disabled={form.processing}>
                         {t.common.save}
                     </Button>
-                    <Link href="/tasks" className="px-4 py-2 text-sm text-zinc-700">
+                    <ButtonLink variant="ghost" href="/tasks">
                         {t.common.cancel}
-                    </Link>
+                    </ButtonLink>
                 </div>
             </CardForm>
-        </>
+        </FormPage>
     );
 }
 

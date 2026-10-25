@@ -23,6 +23,7 @@ type PaymentRow = {
     reference: string | null;
     paid_at: string;
     invoice: { invoice_number: string } | null;
+    customer_name?: string | null;
 };
 
 export default function Index({ payments, filters, canManage }: { payments: Paginator<PaymentRow>; filters: { search?: string }; canManage: boolean }) {
@@ -36,6 +37,18 @@ export default function Index({ payments, filters, canManage }: { payments: Pagi
             header: t.finance.invoiceNumber,
             primary: true,
             cell: (row) => (row.invoice ? <bdi dir="ltr" className="md:whitespace-nowrap">{row.invoice.invoice_number}</bdi> : t.common.none),
+        },
+        {
+            key: 'customer',
+            header: t.ops.customer,
+            cell: (row) =>
+                row.customer_name ? (
+                    <bdi className="block max-w-56 truncate" title={row.customer_name}>
+                        {row.customer_name}
+                    </bdi>
+                ) : (
+                    <span className="text-ink-subtle">{t.common.none}</span>
+                ),
         },
         { key: 'amount', header: t.finance.amount, numeric: true, cell: (row) => <span className="font-medium text-ink">{format.money(row.amount, row.currency)}</span> },
         { key: 'paid', header: t.finance.paidAt, cell: (row) => <span className="md:whitespace-nowrap tabular-nums">{format.dateTime(row.paid_at)}</span> },

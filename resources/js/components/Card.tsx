@@ -1,6 +1,6 @@
 import type { FormHTMLAttributes, HTMLAttributes, ReactNode } from 'react';
 
-const surface = 'rounded-2xl border border-zinc-200/70 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_-8px_rgba(16,24,40,0.08)]';
+const surface = 'rounded-card border border-line/70 bg-surface shadow-card';
 
 export function Card({ children, className = '', ...props }: HTMLAttributes<HTMLDivElement> & { children: ReactNode }) {
     return (

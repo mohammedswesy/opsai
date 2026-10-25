@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\SharesLookups;
 use App\Http\Requests\StorePaymentRequest;
+use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Services\Finance\PaymentService;
@@ -23,6 +24,11 @@ class PaymentController extends Controller
         return Inertia::render('Payments/Index', [
             'payments' => Payment::query()
                 ->with('invoice:id,invoice_number,customer_id')
+                ->addSelect(['customer_name' => Customer::withTrashed()
+                    ->select('customers.name')
+                    ->join('invoices', 'invoices.customer_id', '=', 'customers.id')
+                    ->whereColumn('invoices.id', 'payments.invoice_id')
+                    ->limit(1)])
                 ->when($request->filled('search'), function ($query) use ($request) {
                     $search = $request->string('search')->trim()->toString();
                     $query->where(function ($query) use ($search) {

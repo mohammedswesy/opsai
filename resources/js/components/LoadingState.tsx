@@ -7,7 +7,7 @@ export function LoadingState({ label }: { label: string }) {
             <Skeleton className="h-3 w-28" />
             <Skeleton className="h-3 w-44" />
             <Skeleton className="h-3 w-36" />
-            <p className="text-sm text-zinc-500">{label}</p>
+            <p className="text-body text-ink-muted">{label}</p>
         </Card>
     );
 }

@@ -1,8 +1,9 @@
-import { Button } from '@/components/Button';
+import { Button, ButtonLink } from '@/components/Button';
 import { Card, CardForm } from '@/components/Card';
-import { Link, useForm } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { FormField, controlClassName } from '@/components/FormField';
+import { FormPage } from '@/components/FormPage';
 import { PageHeader } from '@/components/PageHeader';
 import { useI18n } from '@/i18n';
 import { optionLabel } from '@/lib/labels';
@@ -46,9 +47,9 @@ export default function Form({ customer, branches }: { customer: Customer | null
     });
 
     return (
-        <>
+        <FormPage size="wide">
             <PageHeader parent={{ label: t.nav.customers, href: '/customers' }} title={customer ? t.common.edit : t.ops.create} subtitle={t.nav.customers} />
-            <CardForm className="grid max-w-3xl gap-4 p-5 md:grid-cols-2" onSubmit={(event) => {
+            <CardForm className="grid gap-4 p-5 md:grid-cols-2" onSubmit={(event) => {
                     event.preventDefault();
                     const payload = { ...form.data, branch_id: form.data.branch_id || null };
                     form.transform(() => payload);
@@ -121,12 +122,12 @@ export default function Form({ customer, branches }: { customer: Customer | null
                     <Button variant="primary" type="submit" disabled={form.processing}>
                         {t.common.save}
                     </Button>
-                    <Link href="/customers" className="rounded-md px-4 py-2 text-sm text-zinc-700">
+                    <ButtonLink variant="ghost" href="/customers">
                         {t.common.cancel}
-                    </Link>
+                    </ButtonLink>
                 </div>
             </CardForm>
-        </>
+        </FormPage>
     );
 }
 

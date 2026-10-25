@@ -11,6 +11,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { PriorityBadge } from '@/components/PriorityBadge';
 import { RecordList } from '@/components/RecordList';
 import { StatusBadge } from '@/components/StatusBadge';
+import { TableRow } from '@/components/Table';
 import { useI18n } from '@/i18n';
 import { useFormat } from '@/lib/format';
 import { optionLabel } from '@/lib/labels';
@@ -535,7 +536,7 @@ export default function Index({ board }: { board: Board }) {
                                 </thead>
                                 <tbody className="text-ink-secondary">
                                     {technicians.map((technician) => (
-                                        <tr key={`${technician.id}-row`}>
+                                        <TableRow key={`${technician.id}-row`}>
                                             <td className="px-3 py-2.5 font-medium text-ink">
                                                 <bdi>{technician.name ?? t.common.none}</bdi>
                                             </td>
@@ -559,7 +560,7 @@ export default function Index({ board }: { board: Board }) {
                                                     <UtilizationBar value={technician.utilization} className="w-16" />
                                                 </div>
                                             </td>
-                                        </tr>
+                                        </TableRow>
                                     ))}
                                 </tbody>
                             </table>

@@ -63,6 +63,7 @@ export default function BranchesIndex({ branches, canManage }: { branches: Branc
                 />
             </RecordList>
             <ConfirmDialog
+                tone="danger"
                 open={pendingId !== null}
                 title={t.branches.archiveConfirm}
                 confirmLabel={t.common.confirm}

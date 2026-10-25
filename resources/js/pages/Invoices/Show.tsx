@@ -8,6 +8,7 @@ import { MoneySummary } from '@/components/MoneySummary';
 import { RecordHeader } from '@/components/RecordHeader';
 import { Section } from '@/components/Section';
 import { StatusBadge } from '@/components/StatusBadge';
+import { TableRow } from '@/components/Table';
 import { ExternalTextLink, TextLink } from '@/components/TextLink';
 import { useI18n } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout';
@@ -37,7 +38,9 @@ type Invoice = {
     activities: ActivityEntry[];
 };
 
-export default function Show({ invoice, canManage, canPay }: { invoice: Invoice; canManage: boolean; canPay: boolean }) {
+type Letterhead = { name: string; tax_number: string | null };
+
+export default function Show({ invoice, canManage, canPay, letterhead = null }: { invoice: Invoice; canManage: boolean; canPay: boolean; letterhead?: Letterhead | null }) {
     const { t } = useI18n();
     const format = useFormat();
     const can = useCan();
@@ -93,8 +96,13 @@ export default function Show({ invoice, canManage, canPay }: { invoice: Invoice;
                         <div className="min-w-0">
                             <h2 className="text-caption font-semibold text-ink-muted">{t.detail.from}</h2>
                             <p className="mt-1 text-body font-medium text-ink">
-                                <bdi>{organization?.name}</bdi>
+                                <bdi>{letterhead?.name ?? organization?.name}</bdi>
                             </p>
+                            {letterhead?.tax_number ? (
+                                <p className="text-caption text-ink-secondary" data-testid="invoice-tax-number">
+                                    {t.organizations.taxNumber}: <bdi dir="ltr" className="tabular-nums">{letterhead.tax_number}</bdi>
+                                </p>
+                            ) : null}
                             {invoice.branch ? (
                                 <p className="text-caption text-ink-secondary">
                                     <bdi>{invoice.branch.name}</bdi>
@@ -179,7 +187,7 @@ export default function Show({ invoice, canManage, canPay }: { invoice: Invoice;
                             </thead>
                             <tbody className="text-ink">
                                 {invoice.items.map((item) => (
-                                    <tr key={item.id}>
+                                    <TableRow key={item.id}>
                                         <td className="min-w-48 px-5 py-3 align-top">
                                             <bdi className="break-words">{item.description}</bdi>
                                             {item.service ? (
@@ -192,7 +200,7 @@ export default function Show({ invoice, canManage, canPay }: { invoice: Invoice;
                                         <td className="px-3 py-3 text-end align-top whitespace-nowrap tabular-nums">{money(item.unit_price)}</td>
                                         <td className="px-3 py-3 text-end align-top whitespace-nowrap tabular-nums">{money(item.tax)}</td>
                                         <td className="px-5 py-3 text-end align-top font-medium whitespace-nowrap tabular-nums">{money(item.total)}</td>
-                                    </tr>
+                                    </TableRow>
                                 ))}
                             </tbody>
                         </table>
@@ -253,6 +261,8 @@ export default function Show({ invoice, canManage, canPay }: { invoice: Invoice;
             </div>
 
             <ConfirmDialog
+
+                tone="danger"
                 open={canceling}
                 title={t.finance.confirmCancel}
                 confirmLabel={t.common.confirm}

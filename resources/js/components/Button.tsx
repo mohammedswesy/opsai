@@ -1,30 +1,66 @@
 import { Link, type InertiaLinkProps } from '@inertiajs/react';
-import type { ButtonHTMLAttributes } from 'react';
+import { Loader2 } from 'lucide-react';
+import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
 const variants = {
-    primary: 'border border-transparent bg-teal-800 text-white shadow-[0_1px_2px_rgba(16,24,40,0.08)] hover:bg-teal-700',
-    secondary: 'border border-zinc-200/80 bg-white text-zinc-700 shadow-[0_1px_2px_rgba(16,24,40,0.04)] hover:bg-zinc-50',
-    ghost: 'border border-transparent bg-transparent text-zinc-600 hover:bg-zinc-100/80',
-    danger: 'border border-transparent bg-red-600 text-white hover:bg-red-700',
+    primary: 'border border-transparent bg-brand bg-brand-gradient text-on-brand shadow-control hover:brightness-96',
+    secondary: 'border border-line/80 bg-surface text-ink-body shadow-control hover:bg-surface-muted',
+    ghost: 'border border-transparent bg-transparent text-ink-secondary hover:bg-surface-muted/80',
+    danger: 'border border-transparent bg-danger text-on-brand shadow-control hover:brightness-90',
 };
 
-export function buttonClassName(variant: keyof typeof variants = 'secondary', className = ''): string {
-    return `inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[10px] px-3 text-sm font-medium transition-[background-color,box-shadow,transform,color] duration-200 ease-out ${variants[variant]} ${className}`.trim();
+const sizes = {
+    md: 'min-h-10 px-3',
+    sm: 'min-h-8 px-2.5',
+};
+
+const iconSizes = {
+    md: 'size-10',
+    sm: 'size-8',
+};
+
+export type ButtonVariant = keyof typeof variants;
+export type ButtonSize = keyof typeof sizes;
+
+const base = 'inline-flex items-center justify-center gap-1.5 rounded-control text-body font-medium transition-[background-color,box-shadow,transform,color,filter] duration-200 ease-out';
+
+export function buttonClassName(variant: ButtonVariant = 'secondary', className = '', size: ButtonSize = 'md'): string {
+    return `${base} ${sizes[size]} ${variants[variant]} ${className}`.trim();
 }
 
-export function Button({
-    variant = 'secondary',
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+    variant?: ButtonVariant;
+    size?: ButtonSize;
+    /** Disables the button and shows a spinner; the label stays so the width does not jump. */
+    loading?: boolean;
+};
+
+export function Button({ variant = 'secondary', size = 'md', loading = false, className = '', type = 'button', disabled, children, ...props }: ButtonProps) {
+    return (
+        <button type={type} className={buttonClassName(variant, className, size)} disabled={disabled || loading} aria-busy={loading || undefined} {...props}>
+            {loading ? <Loader2 className="size-4 animate-spin" strokeWidth={2} aria-hidden="true" /> : null}
+            {children}
+        </button>
+    );
+}
+
+export function ButtonLink({ variant = 'primary', size = 'md', className = '', ...props }: Omit<InertiaLinkProps, 'size'> & { variant?: ButtonVariant; size?: ButtonSize }) {
+    return <Link className={buttonClassName(variant, className, size)} {...props} />;
+}
+
+/** Square icon-only button. `label` is required: it is the accessible name and the tooltip. */
+export function IconButton({
+    label,
+    variant = 'ghost',
+    size = 'md',
     className = '',
     type = 'button',
+    children,
     ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: keyof typeof variants }) {
-    return <button type={type} className={buttonClassName(variant, className)} {...props} />;
-}
-
-export function ButtonLink({
-    variant = 'primary',
-    className = '',
-    ...props
-}: InertiaLinkProps & { variant?: keyof typeof variants }) {
-    return <Link className={buttonClassName(variant, className)} {...props} />;
+}: Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'aria-label' | 'children'> & { label: string; variant?: ButtonVariant; size?: ButtonSize; children: ReactNode }) {
+    return (
+        <button type={type} aria-label={label} title={label} className={`${base} ${iconSizes[size]} ${variants[variant]} ${className}`.trim()} {...props}>
+            {children}
+        </button>
+    );
 }

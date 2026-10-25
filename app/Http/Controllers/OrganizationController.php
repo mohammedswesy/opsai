@@ -38,6 +38,7 @@ class OrganizationController extends Controller
                 'country' => $organization->country,
                 'status' => $organization->status->value,
                 'role' => $organization->pivot->role,
+                'is_current' => $organization->id === $currentId,
             ]);
 
         return Inertia::render('Organizations/Index', [
