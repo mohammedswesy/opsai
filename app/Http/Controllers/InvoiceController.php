@@ -10,6 +10,7 @@ use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\WorkOrder;
 use App\Services\Finance\InvoiceLifecycleService;
+use App\Support\OrganizationContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -79,8 +80,15 @@ class InvoiceController extends Controller
         $this->authorize('view', $invoice);
         $invoice->load(['customer', 'workOrder', 'items.service:id,name', 'payments.creator:id,name', 'activities.actor:id,name', 'branch:id,name']);
 
+        $organization = OrganizationContext::current()->organization;
+
         return Inertia::render('Invoices/Show', [
             'invoice' => $invoice,
+            // The organizations table has no address column, so the letterhead carries none.
+            'letterhead' => [
+                'name' => $organization->name,
+                'tax_number' => $organization->tax_number,
+            ],
             'canManage' => request()->user()?->can('issue', $invoice) ?? false,
             'canPay' => request()->user()?->can('create', Payment::class) ?? false,
         ]);

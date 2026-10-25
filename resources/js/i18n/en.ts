@@ -108,6 +108,13 @@ export const en = {
         chartValue: 'Value',
         workloadHint: 'Open jobs per technician',
         financeTitle: 'Finance',
+        unassignedJobs: 'Unassigned jobs',
+        overdueAppointments: 'Overdue appointments',
+        upcomingToday: 'Next up today',
+        upcomingTodayEmpty: 'No more appointments today.',
+        myDay: 'My day',
+        myDayHint: 'Your appointments and jobs for today.',
+        myDayEmpty: 'Nothing is scheduled for you today.',
     },
     dispatch: {
         title: 'Dispatch',
@@ -196,6 +203,7 @@ export const en = {
         email: 'Email',
         save: 'Save organization',
         slug: 'Slug',
+        current: 'Current',
     },
     list: {
         previous: 'Previous',
@@ -244,6 +252,11 @@ export const en = {
         linkedService: 'Linked service',
         time: 'Time',
         lineTax: 'Tax',
+        upcomingAppointments: 'Upcoming appointments',
+        noUpcomingAppointments: 'No upcoming appointments.',
+        noActiveWorkOrders: 'No active work orders.',
+        utilizationToday: "Today's utilization",
+        bookedOfWorking: '{booked} of {working} working hours booked',
     },
     common: {
         cancel: 'Cancel',

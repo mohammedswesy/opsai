@@ -37,7 +37,9 @@ type Invoice = {
     activities: ActivityEntry[];
 };
 
-export default function Show({ invoice, canManage, canPay }: { invoice: Invoice; canManage: boolean; canPay: boolean }) {
+type Letterhead = { name: string; tax_number: string | null };
+
+export default function Show({ invoice, canManage, canPay, letterhead = null }: { invoice: Invoice; canManage: boolean; canPay: boolean; letterhead?: Letterhead | null }) {
     const { t } = useI18n();
     const format = useFormat();
     const can = useCan();
@@ -93,8 +95,13 @@ export default function Show({ invoice, canManage, canPay }: { invoice: Invoice;
                         <div className="min-w-0">
                             <h2 className="text-caption font-semibold text-ink-muted">{t.detail.from}</h2>
                             <p className="mt-1 text-body font-medium text-ink">
-                                <bdi>{organization?.name}</bdi>
+                                <bdi>{letterhead?.name ?? organization?.name}</bdi>
                             </p>
+                            {letterhead?.tax_number ? (
+                                <p className="text-caption text-ink-secondary" data-testid="invoice-tax-number">
+                                    {t.organizations.taxNumber}: <bdi dir="ltr" className="tabular-nums">{letterhead.tax_number}</bdi>
+                                </p>
+                            ) : null}
                             {invoice.branch ? (
                                 <p className="text-caption text-ink-secondary">
                                     <bdi>{invoice.branch.name}</bdi>

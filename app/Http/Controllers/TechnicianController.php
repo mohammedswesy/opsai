@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\SharesLookups;
 use App\Http\Requests\StoreTechnicianRequest;
 use App\Http\Requests\UpdateTechnicianRequest;
 use App\Models\Technician;
+use App\Services\Operations\ScheduleQueries;
 use App\Services\Operations\TechnicianService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -48,13 +49,14 @@ class TechnicianController extends Controller
         return redirect()->route('technicians.show', $technician)->with('success', __('Technician saved.'));
     }
 
-    public function show(Technician $technician): Response
+    public function show(Technician $technician, ScheduleQueries $schedule): Response
     {
         $this->authorize('view', $technician);
 
         return Inertia::render('Technicians/Show', [
             'technician' => $technician->load(['user:id,name,email', 'branch:id,name', 'skills.service:id,name']),
             'canManage' => request()->user()?->can('update', $technician) ?? false,
+            'schedule' => $schedule->technicianSchedule($technician),
         ]);
     }
 

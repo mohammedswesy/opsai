@@ -110,6 +110,13 @@ export const ar: Messages = {
         chartValue: 'القيمة',
         workloadHint: 'الأعمال المفتوحة لكل فني',
         financeTitle: 'المالية',
+        unassignedJobs: 'أعمال غير موزعة',
+        overdueAppointments: 'مواعيد متأخرة',
+        upcomingToday: 'التالي اليوم',
+        upcomingTodayEmpty: 'لا توجد مواعيد أخرى اليوم.',
+        myDay: 'يومي',
+        myDayHint: 'مواعيدك وأعمالك لهذا اليوم.',
+        myDayEmpty: 'لا يوجد شيء مجدول لك اليوم.',
     },
     dispatch: {
         title: 'التوزيع',
@@ -198,6 +205,7 @@ export const ar: Messages = {
         email: 'البريد الإلكتروني',
         save: 'حفظ المنشأة',
         slug: 'المعرّف',
+        current: 'الحالية',
     },
     list: {
         previous: 'السابق',
@@ -246,6 +254,11 @@ export const ar: Messages = {
         linkedService: 'الخدمة المرتبطة',
         time: 'الوقت',
         lineTax: 'الضريبة',
+        upcomingAppointments: 'المواعيد القادمة',
+        noUpcomingAppointments: 'لا توجد مواعيد قادمة.',
+        noActiveWorkOrders: 'لا توجد أوامر عمل نشطة.',
+        utilizationToday: 'الاستغلال اليوم',
+        bookedOfWorking: '{booked} من {working} ساعات العمل محجوزة',
     },
     common: {
         cancel: 'إلغاء',

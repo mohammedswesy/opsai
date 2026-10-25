@@ -1,5 +1,6 @@
 import { router, useForm } from '@inertiajs/react';
 import { useState, type ReactNode } from 'react';
+import { ActivityTimeline, type ActivityEntry } from '@/components/ActivityTimeline';
 import { Button, ButtonLink } from '@/components/Button';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DescriptionItem, DescriptionList } from '@/components/DescriptionList';
@@ -50,12 +51,14 @@ export default function Show({
     transitions,
     canTransition,
     canInvoice,
+    activities = [],
 }: {
     workOrder: WorkOrder;
     invoice: { id: string; invoice_number: string } | null;
     transitions: string[];
     canTransition: boolean;
     canInvoice: boolean;
+    activities?: ActivityEntry[];
 }) {
     const { t } = useI18n();
     const format = useFormat();
@@ -222,6 +225,10 @@ export default function Show({
                         ) : (
                             <p className="text-body text-ink-muted">{t.common.none}</p>
                         )}
+                    </Section>
+
+                    <Section title={t.ops.activity} data-testid="work-order-activity">
+                        <ActivityTimeline items={activities} />
                     </Section>
                 </aside>
             </div>

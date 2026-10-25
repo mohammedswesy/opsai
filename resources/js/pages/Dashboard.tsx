@@ -1,13 +1,15 @@
 import { router, usePage } from '@inertiajs/react';
-import { Building2, CalendarDays, CircleDollarSign, ClipboardList, Columns3, Inbox, ListTodo, Plus, Receipt, UserCog, Users, Wallet } from 'lucide-react';
+import { Building2, CalendarClock, CalendarDays, CircleDollarSign, ClipboardList, Columns3, Inbox, ListTodo, Plus, Receipt, UserCog, Users, UserX, Wallet } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Avatar } from '@/components/Avatar';
 import { ButtonLink } from '@/components/Button';
 import { controlClassName } from '@/components/FormField';
 import { KpiCard } from '@/components/KpiCard';
 import { PageTitle } from '@/components/PageTitle';
+import { ScheduleList, type ScheduleItem } from '@/components/ScheduleList';
 import { Section } from '@/components/Section';
 import { StatusBadge } from '@/components/StatusBadge';
+import { TextLink } from '@/components/TextLink';
 import { useI18n } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout';
 import { useFormat } from '@/lib/format';
@@ -28,6 +30,10 @@ type Metrics = {
     requests_by_day: { date: string; count: number }[];
     work_orders_by_status: { status: string; count: number }[];
     technician_workload: { name: string; count: number }[];
+    /** Null when the viewer cannot assign work (same rule as the dispatch board). */
+    unassigned_jobs?: number | null;
+    /** Null when the viewer cannot see appointments; technicians get only their own. */
+    overdue_appointments?: number | null;
 };
 
 type Finance = {
@@ -61,11 +67,15 @@ export default function Dashboard({
     finance,
     branches,
     filters,
+    upcoming_today = null,
+    my_day = null,
 }: {
     metrics: Metrics;
     finance: Finance | null;
     branches: Option[];
     filters: { branch_id?: string; from?: string; to?: string };
+    upcoming_today?: ScheduleItem[] | null;
+    my_day?: ScheduleItem[] | null;
 }) {
     const { t, locale } = useI18n();
     const { auth } = usePage().props;
@@ -95,6 +105,10 @@ export default function Dashboard({
     const canRequest = can('requests.manage') && !navHidden('/requests');
     const canDispatch = (can('appointments.view') || can('work_orders.view')) && !navHidden('/dispatch');
     const overdueTone = finance && Number(finance.overdue) > 0 ? 'danger' : 'success';
+    const unassigned = metrics.unassigned_jobs ?? null;
+    const overdueAppointments = metrics.overdue_appointments ?? null;
+    // Overdue invoices leave the top row when overdue appointments take their place, and join the finance row.
+    const overdueInvoicesInFinance = finance !== null && overdueAppointments !== null;
 
     function apply(next: { branch_id?: string; from?: string; to?: string }) {
         router.get('/', { ...filters, ...next }, { preserveState: true });
@@ -131,6 +145,12 @@ export default function Dashboard({
                 ) : null}
             </header>
 
+            {my_day !== null ? (
+                <Section title={t.dashboard.myDay} description={t.dashboard.myDayHint} data-testid="my-day">
+                    <ScheduleList items={my_day} empty={t.dashboard.myDayEmpty} />
+                </Section>
+            ) : null}
+
             <form className="flex flex-wrap items-end gap-3 rounded-card border border-line bg-surface px-4 py-3 shadow-card">
                 <label className="block min-w-48 flex-1">
                     <span className="mb-1.5 block text-caption font-medium text-ink-muted">{t.dashboard.allBranches}</span>
@@ -149,14 +169,36 @@ export default function Dashboard({
 
             <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <KpiCard icon={CalendarDays} tone="info" label={t.dashboard.todaysAppointments} value={metrics.todays_appointments} />
-                <KpiCard icon={Inbox} tone={metrics.open_requests > 0 ? 'warning' : 'success'} label={t.dashboard.openRequests} value={metrics.open_requests} />
+                {unassigned !== null ? (
+                    <KpiCard icon={UserX} tone={unassigned > 0 ? 'warning' : 'success'} label={t.dashboard.unassignedJobs} value={unassigned} />
+                ) : (
+                    <KpiCard icon={Inbox} tone={metrics.open_requests > 0 ? 'warning' : 'success'} label={t.dashboard.openRequests} value={metrics.open_requests} />
+                )}
                 <KpiCard icon={ClipboardList} label={t.dashboard.activeWorkOrders} value={metrics.active_work_orders} />
-                {finance ? (
+                {overdueAppointments !== null ? (
+                    <KpiCard icon={CalendarClock} tone={overdueAppointments > 0 ? 'danger' : 'success'} label={t.dashboard.overdueAppointments} value={overdueAppointments} />
+                ) : finance ? (
                     <KpiCard icon={CircleDollarSign} tone={overdueTone} label={t.dashboard.overdueInvoices} value={format.money(finance.overdue, finance.currency)} />
                 ) : (
                     <KpiCard icon={ListTodo} tone={metrics.pending_tasks > 0 ? 'warning' : 'success'} label={t.dashboard.pendingTasks} value={metrics.pending_tasks} />
                 )}
             </section>
+
+            {upcoming_today !== null && my_day === null ? (
+                <Section
+                    title={t.dashboard.upcomingToday}
+                    data-testid="upcoming-today"
+                    action={
+                        canDispatch ? (
+                            <TextLink href="/dispatch" className="text-body">
+                                {t.dashboard.openDispatch}
+                            </TextLink>
+                        ) : null
+                    }
+                >
+                    <ScheduleList items={upcoming_today} empty={t.dashboard.upcomingTodayEmpty} showTechnician />
+                </Section>
+            ) : null}
 
             <section className="grid gap-3 lg:grid-cols-[18rem_minmax(0,1fr)]">
                 <Section title={t.dashboard.todayOverview}>
@@ -229,7 +271,10 @@ export default function Dashboard({
                             {invoiceStatusEmpty ? <p className="text-body text-ink-muted">{t.dashboard.emptyChart}</p> : <StatusBars rows={finance.invoice_status} max={maxStatus} tone="info" />}
                         </Section>
                     </div>
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className={`grid gap-3 sm:grid-cols-2 ${overdueInvoicesInFinance ? 'lg:grid-cols-3 xl:grid-cols-5' : 'xl:grid-cols-4'}`}>
+                        {overdueInvoicesInFinance ? (
+                            <KpiCard size="quiet" icon={CircleDollarSign} tone={overdueTone} label={t.dashboard.overdueInvoices} value={format.money(finance.overdue, finance.currency)} />
+                        ) : null}
                         <KpiCard size="quiet" icon={Receipt} tone="warning" label={t.dashboard.outstanding} value={format.money(finance.outstanding, finance.currency)} />
                         <KpiCard size="quiet" icon={Receipt} label={t.dashboard.invoiced} value={format.money(finance.invoiced, finance.currency)} />
                         <KpiCard size="quiet" icon={Wallet} tone="success" label={t.dashboard.paid} value={format.money(finance.paid, finance.currency)} />
@@ -240,7 +285,8 @@ export default function Dashboard({
 
             <section>
                 <h2 className="mb-3 text-caption font-semibold text-ink-muted ltr:tracking-wide ltr:uppercase">{t.dashboard.secondary}</h2>
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                    {unassigned !== null ? <KpiCard size="quiet" icon={Inbox} tone="warning" label={t.dashboard.openRequests} value={metrics.open_requests} /> : null}
                     {finance ? <KpiCard size="quiet" icon={ListTodo} tone="warning" label={t.dashboard.pendingTasks} value={metrics.pending_tasks} /> : null}
                     <KpiCard size="quiet" icon={ClipboardList} tone="success" label={t.dashboard.completedWorkOrders} value={metrics.completed_work_orders} />
                     <KpiCard size="quiet" icon={UserCog} tone="success" label={t.dashboard.availableTechnicians} value={metrics.available_technicians} />

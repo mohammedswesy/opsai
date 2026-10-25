@@ -1,5 +1,6 @@
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { Chip } from '@/components/Chip';
 import { router } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { FormPage } from '@/components/FormPage';
@@ -15,6 +16,7 @@ type Membership = {
     country: string;
     status: string;
     role: string;
+    is_current?: boolean;
 };
 
 export default function OrganizationsIndex({ organizations }: { organizations: Membership[] }) {
@@ -25,9 +27,16 @@ export default function OrganizationsIndex({ organizations }: { organizations: M
             <PageHeader title={t.organizations.title} subtitle={t.organizations.subtitle} />
             <div className="grid gap-3">
                 {organizations.map((organization) => (
-                    <Card className="flex items-center justify-between px-4 py-4" key={organization.id}>
-                        <div>
-                            <h2 className="font-medium">{organization.name}</h2>
+                    <Card
+                        className={`flex items-center justify-between gap-3 px-4 py-4 ${organization.is_current ? 'ring-2 ring-brand-border' : ''}`}
+                        key={organization.id}
+                        aria-current={organization.is_current ? 'true' : undefined}
+                    >
+                        <div className="min-w-0">
+                            <h2 className="flex flex-wrap items-center gap-2 font-medium">
+                                <bdi>{organization.name}</bdi>
+                                {organization.is_current ? <Chip tone="brand">{t.organizations.current}</Chip> : null}
+                            </h2>
                             <p className="text-sm text-zinc-500">
                                 {optionLabel(t.labels, organization.role)} · {organization.country} · {optionLabel(t.labels, organization.status)}
                             </p>

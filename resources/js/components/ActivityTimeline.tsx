@@ -10,6 +10,9 @@ export type ActivityEntry = {
     created_at?: string | null;
     actor?: { name: string } | null;
     properties?: Record<string, unknown> | null;
+    /** Explicit payloads (work orders) send the change at the top level instead of in properties. */
+    from?: string | null;
+    to?: string | null;
 };
 
 /**
@@ -29,8 +32,8 @@ export function ActivityTimeline({ items }: { items: ActivityEntry[] }) {
     return (
         <ol className="space-y-4">
             {items.map((item, index) => {
-                const from = item.properties?.from;
-                const to = item.properties?.to;
+                const from = item.from ?? item.properties?.from;
+                const to = item.to ?? item.properties?.to;
                 const changed = typeof to === 'string' && to !== '';
 
                 return (
