@@ -37,7 +37,7 @@ export default function OrganizationsIndex({ organizations }: { organizations: M
                                 <bdi>{organization.name}</bdi>
                                 {organization.is_current ? <Chip tone="brand">{t.organizations.current}</Chip> : null}
                             </h2>
-                            <p className="text-sm text-zinc-500">
+                            <p className="text-body text-ink-muted">
                                 {optionLabel(t.labels, organization.role)} · {organization.country} · {optionLabel(t.labels, organization.status)}
                             </p>
                         </div>

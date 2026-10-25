@@ -1,6 +1,6 @@
-import { Button } from '@/components/Button';
+import { Button, ButtonLink } from '@/components/Button';
 import { Card, CardForm } from '@/components/Card';
-import { Link, useForm } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { FormField, controlClassName } from '@/components/FormField';
 import { FormPage } from '@/components/FormPage';
@@ -128,9 +128,9 @@ export default function Form({
                     <Button variant="primary" type="submit" disabled={form.processing}>
                         {t.common.save}
                     </Button>
-                    <Link href="/appointments" className="px-4 py-2 text-sm text-zinc-700">
+                    <ButtonLink variant="ghost" href="/appointments">
                         {t.common.cancel}
-                    </Link>
+                    </ButtonLink>
                 </div>
             </CardForm>
         </FormPage>

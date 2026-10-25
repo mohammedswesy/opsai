@@ -2,6 +2,7 @@ import { useForm } from '@inertiajs/react';
 import { MessageCircle, SendHorizontal } from 'lucide-react';
 import { Fragment, useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
 import { Button } from '@/components/Button';
+import { controlFocusClassName } from '@/components/FormField';
 import { PageHeader } from '@/components/PageHeader';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useI18n } from '@/i18n';
@@ -18,7 +19,7 @@ type MessageRow = {
     created_at: string | null;
 };
 
-const fieldClassName = 'min-h-11 w-full rounded-control border border-line bg-surface px-3 text-body text-ink placeholder:text-ink-subtle';
+const fieldClassName = `min-h-11 w-full rounded-control border border-line bg-surface px-3 text-body text-ink placeholder:text-ink-subtle ${controlFocusClassName}`;
 
 export default function Show({
     conversation,
@@ -142,7 +143,7 @@ export default function Show({
                             >
                                 <textarea
                                     rows={1}
-                                    className="max-h-32 min-h-11 w-full resize-none rounded-control border border-line bg-surface px-3 py-2.5 text-body text-ink placeholder:text-ink-subtle"
+                                    className={`max-h-32 min-h-11 w-full resize-none rounded-control border border-line bg-surface px-3 py-2.5 text-body text-ink placeholder:text-ink-subtle ${controlFocusClassName}`}
                                     aria-label={t.whatsapp.reply}
                                     placeholder={t.whatsapp.reply}
                                     value={reply.data.message}

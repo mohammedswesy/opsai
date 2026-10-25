@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { useId, type ReactNode } from 'react';
 import { RowActionMenu, type RowAction } from '@/components/RowActionMenu';
+import { TableRow } from '@/components/Table';
 import { useVisitState } from '@/components/VisitState';
 import { useI18n } from '@/i18n';
 import { DESKTOP_QUERY, useMediaQuery } from '@/lib/useMediaQuery';
@@ -167,20 +168,20 @@ export function DataTable<T>({
                 <tbody className="text-ink-secondary">
                     {loading
                         ? Array.from({ length: SKELETON_ROWS }, (_, index) => (
-                              <tr key={`skeleton-${index}`} aria-hidden="true">
+                              <TableRow key={`skeleton-${index}`} aria-hidden="true">
                                   {columns.map((column) => (
                                       <td key={column.key} className="px-4 py-3.5">
                                           <span className={`block h-3 animate-pulse rounded-badge bg-line ${column.primary ? 'w-40' : column.numeric ? 'ms-auto w-16' : 'w-24'}`} />
                                       </td>
                                   ))}
                                   {hasActions ? <td className="px-4 py-3.5" /> : null}
-                              </tr>
+                              </TableRow>
                           ))
                         : rows.map((row) => {
                               const rowActions = actions?.(row) ?? [];
 
                               return (
-                                  <tr key={rowKey(row)}>
+                                  <TableRow key={rowKey(row)}>
                                       {columns.map((column) => (
                                           <td
                                               key={column.key}
@@ -195,7 +196,7 @@ export function DataTable<T>({
                                               {rowActions.length > 0 ? <RowActions actions={rowActions} describedBy={labelId(row)} /> : null}
                                           </td>
                                       ) : null}
-                                  </tr>
+                                  </TableRow>
                               );
                           })}
                 </tbody>

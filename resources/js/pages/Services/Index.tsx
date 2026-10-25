@@ -87,6 +87,7 @@ export default function Index({ services, filters, canManage }: { services: Pagi
                 <Pagination paginator={services} />
             </RecordList>
             <ConfirmDialog
+                tone="danger"
                 open={archiveId !== null}
                 title={t.ops.archiveConfirm}
                 confirmLabel={t.common.archive}

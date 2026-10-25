@@ -156,6 +156,7 @@ export default function UsersIndex({
                 />
             </RecordList>
             <ConfirmDialog
+                tone="danger"
                 open={pendingId !== null}
                 title={t.users.removeConfirm}
                 confirmLabel={t.common.confirm}

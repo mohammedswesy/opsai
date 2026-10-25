@@ -2,6 +2,7 @@ import { Button } from '@/components/Button';
 import { Card, CardForm } from '@/components/Card';
 import { useForm } from '@inertiajs/react';
 import type { ReactNode } from 'react';
+import { FormField, Input, Select } from '@/components/FormField';
 import { FormPage } from '@/components/FormPage';
 import { PageHeader } from '@/components/PageHeader';
 import { useI18n } from '@/i18n';
@@ -33,42 +34,35 @@ export default function Settings({ integration }: { integration: IntegrationView
     return (
         <FormPage>
             <PageHeader parent={{ label: t.nav.whatsapp, href: '/whatsapp' }} title={t.whatsapp.settings} />
-            <CardForm className=" space-y-4 p-4" onSubmit={(event) => {
+            <CardForm className="space-y-4 p-5" onSubmit={(event) => {
                     event.preventDefault();
                     form.put('/settings/integrations/whatsapp');
                 }}
             >
-                <label className="block text-sm">
-                    {t.whatsapp.phoneNumberId}
-                    <input className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2" value={form.data.phone_number_id} onChange={(event) => form.setData('phone_number_id', event.target.value)} />
-                </label>
-                <label className="block text-sm">
-                    {t.whatsapp.displayPhone}
-                    <input className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2" value={form.data.display_phone} onChange={(event) => form.setData('display_phone', event.target.value)} />
-                </label>
-                <label className="block text-sm">
-                    {t.whatsapp.businessAccount}
-                    <input className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2" value={form.data.business_account_id} onChange={(event) => form.setData('business_account_id', event.target.value)} />
-                </label>
-                <label className="block text-sm">
-                    {t.whatsapp.accessToken}
-                    <input className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2" type="password" autoComplete="off" value={form.data.access_token} onChange={(event) => form.setData('access_token', event.target.value)} placeholder={integration?.token_hint ?? ''} />
-                </label>
-                <label className="block text-sm">
-                    {t.whatsapp.appSecret}
-                    <input className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2" type="password" autoComplete="off" value={form.data.app_secret} onChange={(event) => form.setData('app_secret', event.target.value)} placeholder={integration?.secret_hint ?? ''} />
-                </label>
-                <label className="block text-sm">
-                    {t.whatsapp.verifyToken}
-                    <input className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2" type="password" autoComplete="off" value={form.data.verify_token} onChange={(event) => form.setData('verify_token', event.target.value)} placeholder={integration?.verify_token_set ? t.whatsapp.tokenHint : ''} />
-                </label>
-                <label className="block text-sm">
-                    {t.whatsapp.status}
-                    <select className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2" value={form.data.status} onChange={(event) => form.setData('status', event.target.value)}>
+                <FormField label={t.whatsapp.phoneNumberId} error={form.errors.phone_number_id}>
+                    <Input value={form.data.phone_number_id} onChange={(event) => form.setData('phone_number_id', event.target.value)} />
+                </FormField>
+                <FormField label={t.whatsapp.displayPhone} error={form.errors.display_phone}>
+                    <Input value={form.data.display_phone} onChange={(event) => form.setData('display_phone', event.target.value)} />
+                </FormField>
+                <FormField label={t.whatsapp.businessAccount} error={form.errors.business_account_id}>
+                    <Input value={form.data.business_account_id} onChange={(event) => form.setData('business_account_id', event.target.value)} />
+                </FormField>
+                <FormField label={t.whatsapp.accessToken} error={form.errors.access_token}>
+                    <Input type="password" autoComplete="off" value={form.data.access_token} onChange={(event) => form.setData('access_token', event.target.value)} placeholder={integration?.token_hint ?? ''} />
+                </FormField>
+                <FormField label={t.whatsapp.appSecret} error={form.errors.app_secret}>
+                    <Input type="password" autoComplete="off" value={form.data.app_secret} onChange={(event) => form.setData('app_secret', event.target.value)} placeholder={integration?.secret_hint ?? ''} />
+                </FormField>
+                <FormField label={t.whatsapp.verifyToken} error={form.errors.verify_token}>
+                    <Input type="password" autoComplete="off" value={form.data.verify_token} onChange={(event) => form.setData('verify_token', event.target.value)} placeholder={integration?.verify_token_set ? t.whatsapp.tokenHint : ''} />
+                </FormField>
+                <FormField label={t.whatsapp.status} error={form.errors.status}>
+                    <Select value={form.data.status} onChange={(event) => form.setData('status', event.target.value)}>
                         <option value="active">{t.whatsapp.connected}</option>
                         <option value="disabled">{t.whatsapp.disabled}</option>
-                    </select>
-                </label>
+                    </Select>
+                </FormField>
                 <div className="flex gap-3">
                     <Button variant="primary" type="submit">{t.whatsapp.save}</Button>
                     <Button variant="secondary" type="button" onClick={() => form.post('/settings/integrations/whatsapp/verify')}>{t.whatsapp.verify}</Button>

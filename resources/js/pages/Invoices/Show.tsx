@@ -8,6 +8,7 @@ import { MoneySummary } from '@/components/MoneySummary';
 import { RecordHeader } from '@/components/RecordHeader';
 import { Section } from '@/components/Section';
 import { StatusBadge } from '@/components/StatusBadge';
+import { TableRow } from '@/components/Table';
 import { ExternalTextLink, TextLink } from '@/components/TextLink';
 import { useI18n } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout';
@@ -186,7 +187,7 @@ export default function Show({ invoice, canManage, canPay, letterhead = null }: 
                             </thead>
                             <tbody className="text-ink">
                                 {invoice.items.map((item) => (
-                                    <tr key={item.id}>
+                                    <TableRow key={item.id}>
                                         <td className="min-w-48 px-5 py-3 align-top">
                                             <bdi className="break-words">{item.description}</bdi>
                                             {item.service ? (
@@ -199,7 +200,7 @@ export default function Show({ invoice, canManage, canPay, letterhead = null }: 
                                         <td className="px-3 py-3 text-end align-top whitespace-nowrap tabular-nums">{money(item.unit_price)}</td>
                                         <td className="px-3 py-3 text-end align-top whitespace-nowrap tabular-nums">{money(item.tax)}</td>
                                         <td className="px-5 py-3 text-end align-top font-medium whitespace-nowrap tabular-nums">{money(item.total)}</td>
-                                    </tr>
+                                    </TableRow>
                                 ))}
                             </tbody>
                         </table>
@@ -260,6 +261,8 @@ export default function Show({ invoice, canManage, canPay, letterhead = null }: 
             </div>
 
             <ConfirmDialog
+
+                tone="danger"
                 open={canceling}
                 title={t.finance.confirmCancel}
                 confirmLabel={t.common.confirm}

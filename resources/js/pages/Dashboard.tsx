@@ -3,6 +3,7 @@ import { Building2, CalendarClock, CalendarDays, CircleDollarSign, ClipboardList
 import type { ReactNode } from 'react';
 import { Avatar } from '@/components/Avatar';
 import { ButtonLink } from '@/components/Button';
+import { DateInput } from '@/components/DateInput';
 import { controlClassName } from '@/components/FormField';
 import { KpiCard } from '@/components/KpiCard';
 import { PageTitle } from '@/components/PageTitle';
@@ -299,17 +300,10 @@ export default function Dashboard({
 }
 
 function DateField({ label, value, placeholder, onChange }: { label: string; value: string; placeholder: string; onChange: (value: string) => void }) {
-    const format = useFormat();
-
     return (
         <label className="block min-w-44">
             <span className="mb-1.5 block text-caption font-medium text-ink-muted">{label}</span>
-            <span className="relative block">
-                <input className={`${controlClassName} date-mask`} type="date" aria-label={label} defaultValue={value} onChange={(event) => onChange(event.target.value)} />
-                <span className="pointer-events-none absolute inset-y-0 start-3 end-9 flex items-center truncate text-body text-ink">
-                    {value ? format.date(value) : <span className="text-ink-subtle">{placeholder}</span>}
-                </span>
-            </span>
+            <DateInput aria-label={label} value={value} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} />
         </label>
     );
 }

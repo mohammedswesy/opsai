@@ -119,6 +119,7 @@ export default function Index({
                 <Pagination paginator={customers} />
             </RecordList>
             <ConfirmDialog
+                tone="danger"
                 open={archiveId !== null}
                 title={t.ops.archiveConfirm}
                 confirmLabel={t.common.archive}

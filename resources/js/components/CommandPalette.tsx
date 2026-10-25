@@ -78,16 +78,16 @@ export function CommandPalette({
 
     return (
         <div className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-[12vh]">
-            <button type="button" className="absolute inset-0 bg-zinc-950/40 backdrop-blur-[2px]" aria-label={t.nav.closeMenu} onClick={onClose} />
+            <button type="button" className="absolute inset-0 bg-ink/40 backdrop-blur-[2px]" aria-label={t.nav.closeMenu} onClick={onClose} />
             <div
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={titleId}
-                className="relative w-full max-w-xl overflow-hidden rounded-2xl border border-zinc-200/70 bg-white shadow-[0_24px_48px_-12px_rgba(16,24,40,0.22)]"
+                className="relative w-full max-w-xl overflow-hidden rounded-overlay border border-line/70 bg-surface shadow-overlay"
             >
                 <h2 id={titleId} className="sr-only">{t.nav.command}</h2>
-                <div className="flex items-center gap-2 border-b border-zinc-200/80 px-4">
-                    <Search className="size-[18px] shrink-0 text-zinc-400" strokeWidth={1.75} />
+                <div className="flex items-center gap-2 border-b border-line/80 px-4">
+                    <Search className="size-[18px] shrink-0 text-ink-subtle" strokeWidth={1.75} />
                     <input
                         ref={inputRef}
                         value={query}
@@ -95,7 +95,7 @@ export function CommandPalette({
                         placeholder={t.nav.searchPlaceholder}
                         aria-controls={listId}
                         aria-activedescendant={items[active] ? `${listId}-${active}` : undefined}
-                        className="h-12 w-full border-0 bg-transparent text-sm text-zinc-900 outline-none ring-0 placeholder:text-zinc-400"
+                        className="h-12 w-full border-0 bg-transparent text-body text-ink outline-none ring-0 placeholder:text-ink-subtle"
                         onKeyDown={(event) => {
                             if (event.key === 'ArrowDown') {
                                 event.preventDefault();
@@ -113,7 +113,7 @@ export function CommandPalette({
                     />
                 </div>
                 <ul id={listId} role="listbox" className="max-h-80 overflow-y-auto p-2">
-                    {items.length === 0 ? <li className="px-3 py-6 text-center text-sm text-zinc-500">{t.nav.noMatches}</li> : null}
+                    {items.length === 0 ? <li className="px-3 py-6 text-center text-body text-ink-muted">{t.nav.noMatches}</li> : null}
                     {items.map((item, index) => (
                         <li key={`${item.href}-${item.label}`}>
                             <Link
@@ -121,12 +121,12 @@ export function CommandPalette({
                                 role="option"
                                 aria-selected={index === active}
                                 href={item.href}
-                                className={`flex items-center justify-between gap-3 rounded-[10px] px-3 py-2 text-sm ${index === active ? 'bg-blue-50 text-blue-800' : 'text-zinc-700'}`}
+                                className={`flex items-center justify-between gap-3 rounded-control px-3 py-2 text-body ${index === active ? 'bg-brand-soft text-brand-strong' : 'text-ink-body'}`}
                                 onMouseEnter={() => setActive(index)}
                                 onClick={() => choose(index)}
                             >
                                 <span className="truncate">{item.label}</span>
-                                <span className="shrink-0 text-xs text-zinc-400">{item.group}</span>
+                                <span className="shrink-0 text-caption text-ink-subtle">{item.group}</span>
                             </Link>
                         </li>
                     ))}

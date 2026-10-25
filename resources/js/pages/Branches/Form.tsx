@@ -1,6 +1,6 @@
-import { Button } from '@/components/Button';
+import { Button, ButtonLink } from '@/components/Button';
 import { Card, CardForm } from '@/components/Card';
-import { Link, useForm } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { controlClassName, FormField } from '@/components/FormField';
 import { FormPage } from '@/components/FormPage';
@@ -106,9 +106,9 @@ export default function BranchForm({
                     <Button variant="primary" type="submit" disabled={form.processing}>
                         {t.branches.save}
                     </Button>
-                    <Link href="/branches" className="rounded-md px-4 py-2 text-sm text-zinc-700">
+                    <ButtonLink variant="ghost" href="/branches">
                         {t.common.cancel}
-                    </Link>
+                    </ButtonLink>
                 </div>
             </CardForm>
         </FormPage>
