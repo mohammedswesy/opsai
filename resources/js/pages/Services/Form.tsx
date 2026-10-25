@@ -3,6 +3,7 @@ import { Card, CardForm } from '@/components/Card';
 import { Link, useForm } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { FormField, controlClassName } from '@/components/FormField';
+import { FormPage } from '@/components/FormPage';
 import { PageHeader } from '@/components/PageHeader';
 import { useI18n } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout';
@@ -29,9 +30,9 @@ export default function Form({ service }: { service: CatalogItem | null }) {
     });
 
     return (
-        <>
+        <FormPage>
             <PageHeader parent={{ label: t.nav.services, href: '/services' }} title={service ? t.common.edit : t.ops.create} subtitle={t.nav.services} />
-            <CardForm className="grid max-w-3xl gap-4 p-5" onSubmit={(event) => {
+            <CardForm className="grid gap-4 p-5" onSubmit={(event) => {
                     event.preventDefault();
                     const payload = {
                         ...form.data,
@@ -76,7 +77,7 @@ export default function Form({ service }: { service: CatalogItem | null }) {
                     </Link>
                 </div>
             </CardForm>
-        </>
+        </FormPage>
     );
 }
 

@@ -3,6 +3,7 @@ import { Card, CardForm } from '@/components/Card';
 import { Link, useForm } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { FormField, controlClassName } from '@/components/FormField';
+import { FormPage } from '@/components/FormPage';
 import { PageHeader } from '@/components/PageHeader';
 import { useI18n } from '@/i18n';
 import { optionLabel } from '@/lib/labels';
@@ -30,9 +31,9 @@ export default function Form({
     const selectedInvoice = invoices.find((invoice) => invoice.id === form.data.invoice_id);
 
     return (
-        <>
+        <FormPage>
             <PageHeader parent={{ label: t.nav.payments, href: '/payments' }} title={t.finance.recordPayment} />
-            <CardForm className="grid max-w-xl gap-4 p-5" onSubmit={(event) => {
+            <CardForm className="grid gap-4 p-5" onSubmit={(event) => {
                     event.preventDefault();
                     form.post('/payments');
                 }}
@@ -79,7 +80,7 @@ export default function Form({
                     </Link>
                 </div>
             </CardForm>
-        </>
+        </FormPage>
     );
 }
 

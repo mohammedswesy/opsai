@@ -47,6 +47,10 @@
     --color-info-soft: #f0f9ff;
     --color-info-border: #bae6fd;
 
+    /* Form page widths (max-w-form, max-w-form-wide): single-column vs two-column forms. */
+    --container-form: 40rem;
+    --container-form-wide: 56rem;
+
     --radius-control: 0.625rem;
     --radius-badge: 9999px;
     --radius-card: 1rem;

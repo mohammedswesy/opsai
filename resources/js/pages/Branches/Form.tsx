@@ -3,6 +3,7 @@ import { Card, CardForm } from '@/components/Card';
 import { Link, useForm } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { controlClassName, FormField } from '@/components/FormField';
+import { FormPage } from '@/components/FormPage';
 import { PageHeader } from '@/components/PageHeader';
 import { useI18n } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout';
@@ -46,9 +47,9 @@ export default function BranchForm({
     });
 
     return (
-        <>
+        <FormPage>
             <PageHeader parent={{ label: t.branches.title, href: '/branches' }} title={branch ? t.branches.edit : t.branches.create} />
-            <CardForm className="max-w-2xl space-y-4 p-5" onSubmit={(event) => {
+            <CardForm className=" space-y-4 p-5" onSubmit={(event) => {
                     event.preventDefault();
                     if (branch) {
                         form.put(`/branches/${branch.id}`);
@@ -110,7 +111,7 @@ export default function BranchForm({
                     </Link>
                 </div>
             </CardForm>
-        </>
+        </FormPage>
     );
 }
 

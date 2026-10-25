@@ -2,6 +2,7 @@ import { Button } from '@/components/Button';
 import { Card, CardForm } from '@/components/Card';
 import { useForm } from '@inertiajs/react';
 import type { ReactNode } from 'react';
+import { FormPage } from '@/components/FormPage';
 import { PageHeader } from '@/components/PageHeader';
 import { useI18n } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout';
@@ -30,9 +31,9 @@ export default function Settings({ integration }: { integration: IntegrationView
     });
 
     return (
-        <>
+        <FormPage>
             <PageHeader parent={{ label: t.nav.whatsapp, href: '/whatsapp' }} title={t.whatsapp.settings} />
-            <CardForm className="max-w-xl space-y-4 p-4" onSubmit={(event) => {
+            <CardForm className=" space-y-4 p-4" onSubmit={(event) => {
                     event.preventDefault();
                     form.put('/settings/integrations/whatsapp');
                 }}
@@ -73,7 +74,7 @@ export default function Settings({ integration }: { integration: IntegrationView
                     <Button variant="secondary" type="button" onClick={() => form.post('/settings/integrations/whatsapp/verify')}>{t.whatsapp.verify}</Button>
                 </div>
             </CardForm>
-        </>
+        </FormPage>
     );
 }
 

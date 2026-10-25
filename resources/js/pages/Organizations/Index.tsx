@@ -2,6 +2,7 @@ import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { router } from '@inertiajs/react';
 import type { ReactNode } from 'react';
+import { FormPage } from '@/components/FormPage';
 import { PageHeader } from '@/components/PageHeader';
 import { useI18n } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout';
@@ -20,7 +21,7 @@ export default function OrganizationsIndex({ organizations }: { organizations: M
     const { t } = useI18n();
 
     return (
-        <>
+        <FormPage>
             <PageHeader title={t.organizations.title} subtitle={t.organizations.subtitle} />
             <div className="grid gap-3">
                 {organizations.map((organization) => (
@@ -39,7 +40,7 @@ export default function OrganizationsIndex({ organizations }: { organizations: M
                     </Card>
                 ))}
             </div>
-        </>
+        </FormPage>
     );
 }
 

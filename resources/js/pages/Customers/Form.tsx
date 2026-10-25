@@ -3,6 +3,7 @@ import { Card, CardForm } from '@/components/Card';
 import { Link, useForm } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { FormField, controlClassName } from '@/components/FormField';
+import { FormPage } from '@/components/FormPage';
 import { PageHeader } from '@/components/PageHeader';
 import { useI18n } from '@/i18n';
 import { optionLabel } from '@/lib/labels';
@@ -46,9 +47,9 @@ export default function Form({ customer, branches }: { customer: Customer | null
     });
 
     return (
-        <>
+        <FormPage size="wide">
             <PageHeader parent={{ label: t.nav.customers, href: '/customers' }} title={customer ? t.common.edit : t.ops.create} subtitle={t.nav.customers} />
-            <CardForm className="grid max-w-3xl gap-4 p-5 md:grid-cols-2" onSubmit={(event) => {
+            <CardForm className="grid gap-4 p-5 md:grid-cols-2" onSubmit={(event) => {
                     event.preventDefault();
                     const payload = { ...form.data, branch_id: form.data.branch_id || null };
                     form.transform(() => payload);
@@ -126,7 +127,7 @@ export default function Form({ customer, branches }: { customer: Customer | null
                     </Link>
                 </div>
             </CardForm>
-        </>
+        </FormPage>
     );
 }
 

@@ -148,7 +148,7 @@ export default function Show({
                     {canTransition && transitions.length > 0 ? (
                         <Section title={t.ops.transitions}>
                             <form
-                                className="max-w-xl space-y-4"
+                                className="space-y-4"
                                 onSubmit={(event) => {
                                     event.preventDefault();
                                     if (needsConfirm) {
