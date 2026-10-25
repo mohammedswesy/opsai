@@ -68,4 +68,4 @@ Created by the seeders. The password for every demo user is `password`. Use them
 | technician@riyadh-cooling.test | Riyadh Cooling & Maintenance | technician |
 | accountant@riyadh-cooling.test | Riyadh Cooling & Maintenance | accountant |
 | support@riyadh-cooling.test | Riyadh Cooling & Maintenance | customer service |
-|
+
