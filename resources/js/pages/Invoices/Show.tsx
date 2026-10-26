@@ -1,7 +1,8 @@
 import { router, usePage } from '@inertiajs/react';
+import { Download } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { ActivityTimeline, type ActivityEntry } from '@/components/ActivityTimeline';
-import { Button, ButtonLink } from '@/components/Button';
+import { Button, ButtonLink, buttonClassName } from '@/components/Button';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DescriptionItem, DescriptionList } from '@/components/DescriptionList';
 import { MoneySummary } from '@/components/MoneySummary';
@@ -38,7 +39,15 @@ type Invoice = {
     activities: ActivityEntry[];
 };
 
-type Letterhead = { name: string; tax_number: string | null };
+type Letterhead = {
+    name: string;
+    legal_name?: string | null;
+    tax_number: string | null;
+    address?: string | null;
+    city?: string | null;
+    phone?: string | null;
+    email?: string | null;
+};
 
 export default function Show({ invoice, canManage, canPay, letterhead = null }: { invoice: Invoice; canManage: boolean; canPay: boolean; letterhead?: Letterhead | null }) {
     const { t } = useI18n();
@@ -52,6 +61,9 @@ export default function Show({ invoice, canManage, canPay, letterhead = null }: 
     const separator = format.locale === 'ar' ? '، ' : ', ';
     const address = customer ? [customer.address, customer.city, customer.country].filter(Boolean).join(separator) : '';
     const hasDiscount = Number(invoice.discount) > 0;
+    const sellerName = letterhead?.legal_name || letterhead?.name || organization?.name;
+    const tradeName = letterhead?.legal_name && letterhead.legal_name !== letterhead.name ? letterhead.name : null;
+    const sellerAddress = letterhead ? [letterhead.address, letterhead.city].filter(Boolean).join(separator) : '';
 
     return (
         <>
@@ -66,6 +78,11 @@ export default function Show({ invoice, canManage, canPay, letterhead = null }: 
                 ]}
                 actions={
                     <>
+                        {/* A plain link: the PDF is a file download, not an Inertia page. */}
+                        <a href={`/invoices/${invoice.id}/pdf`} className={buttonClassName('secondary')} download>
+                            <Download className="size-4" strokeWidth={1.75} aria-hidden="true" />
+                            {t.finance.downloadPdf}
+                        </a>
                         {canManage && invoice.status === 'draft' ? (
                             <ButtonLink variant="secondary" href={`/invoices/${invoice.id}/edit`}>
                                 {t.common.edit}
@@ -96,11 +113,31 @@ export default function Show({ invoice, canManage, canPay, letterhead = null }: 
                         <div className="min-w-0">
                             <h2 className="text-caption font-semibold text-ink-muted">{t.detail.from}</h2>
                             <p className="mt-1 text-body font-medium text-ink">
-                                <bdi>{letterhead?.name ?? organization?.name}</bdi>
+                                <bdi>{sellerName}</bdi>
                             </p>
+                            {tradeName ? (
+                                <p className="text-caption text-ink-secondary">
+                                    <bdi>{tradeName}</bdi>
+                                </p>
+                            ) : null}
+                            {sellerAddress ? (
+                                <p className="text-caption text-ink-secondary" data-testid="invoice-seller-address">
+                                    <bdi>{sellerAddress}</bdi>
+                                </p>
+                            ) : null}
                             {letterhead?.tax_number ? (
                                 <p className="text-caption text-ink-secondary" data-testid="invoice-tax-number">
                                     {t.organizations.taxNumber}: <bdi dir="ltr" className="tabular-nums">{letterhead.tax_number}</bdi>
+                                </p>
+                            ) : null}
+                            {letterhead?.phone ? (
+                                <p className="text-caption text-ink-secondary">
+                                    <bdi dir="ltr">{letterhead.phone}</bdi>
+                                </p>
+                            ) : null}
+                            {letterhead?.email ? (
+                                <p className="text-caption text-ink-secondary">
+                                    <bdi dir="ltr">{letterhead.email}</bdi>
                                 </p>
                             ) : null}
                             {invoice.branch ? (

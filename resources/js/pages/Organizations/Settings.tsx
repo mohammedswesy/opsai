@@ -17,6 +17,8 @@ type OrganizationForm = {
     tax_number: string | null;
     phone: string | null;
     email: string | null;
+    address: string | null;
+    city: string | null;
     country: string;
     timezone: string;
     currency: string;
@@ -49,6 +51,8 @@ export default function OrganizationSettings({
         tax_number: organization.tax_number ?? '',
         phone: organization.phone ?? '',
         email: organization.email ?? '',
+        address: organization.address ?? '',
+        city: organization.city ?? '',
         country: organization.country,
         timezone: organization.timezone,
         currency: organization.currency,
@@ -72,16 +76,30 @@ export default function OrganizationSettings({
                     <input className={controlClassName} value={form.data.name} disabled={!canUpdate} onChange={(event) => form.setData('name', event.target.value)} />
                 </FormField>
                 <FormField label={t.organizations.legalName} error={form.errors.legal_name}>
-                    <input className={controlClassName} value={form.data.legal_name} disabled={!canUpdate} onChange={(event) => form.setData('legal_name', event.target.value)} />
+                    <input className={controlClassName} dir="auto" value={form.data.legal_name} disabled={!canUpdate} onChange={(event) => form.setData('legal_name', event.target.value)} />
                 </FormField>
-                <FormField label={t.organizations.taxNumber} error={form.errors.tax_number}>
-                    <input className={controlClassName} value={form.data.tax_number} disabled={!canUpdate} onChange={(event) => form.setData('tax_number', event.target.value)} />
+                <FormField label={t.organizations.taxNumber} error={form.errors.tax_number} hint={t.organizations.taxNumberHint}>
+                    <input
+                        className={controlClassName}
+                        dir="ltr"
+                        inputMode="numeric"
+                        maxLength={15}
+                        value={form.data.tax_number}
+                        disabled={!canUpdate}
+                        onChange={(event) => form.setData('tax_number', event.target.value)}
+                    />
                 </FormField>
                 <FormField label={t.organizations.phone} error={form.errors.phone}>
                     <input className={controlClassName} value={form.data.phone} disabled={!canUpdate} onChange={(event) => form.setData('phone', event.target.value)} />
                 </FormField>
                 <FormField label={t.organizations.email} error={form.errors.email}>
                     <input className={controlClassName} type="email" value={form.data.email} disabled={!canUpdate} onChange={(event) => form.setData('email', event.target.value)} />
+                </FormField>
+                <FormField label={t.organizations.address} error={form.errors.address}>
+                    <input className={controlClassName} dir="auto" value={form.data.address} disabled={!canUpdate} onChange={(event) => form.setData('address', event.target.value)} />
+                </FormField>
+                <FormField label={t.organizations.city} error={form.errors.city}>
+                    <input className={controlClassName} dir="auto" value={form.data.city} disabled={!canUpdate} onChange={(event) => form.setData('city', event.target.value)} />
                 </FormField>
                 <FormField label={t.guest.country} error={form.errors.country}>
                     <select className={controlClassName} value={form.data.country} disabled={!canUpdate} onChange={(event) => form.setData('country', event.target.value)}>

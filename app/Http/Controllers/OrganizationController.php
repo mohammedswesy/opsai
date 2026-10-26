@@ -78,6 +78,8 @@ class OrganizationController extends Controller
                 'tax_number' => $organization->tax_number,
                 'phone' => $organization->phone,
                 'email' => $organization->email,
+                'address' => $organization->address,
+                'city' => $organization->city,
                 'country' => $organization->country,
                 'timezone' => $organization->timezone,
                 'currency' => $organization->currency,

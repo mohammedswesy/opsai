@@ -302,7 +302,7 @@ it('adds the organization letterhead to the invoice page', function () {
     [$owner, $organization] = createMember();
     [$otherOwner, $otherOrganization] = createMember();
     [$technicianUser] = createMember(OrganizationRole::Technician, $organization);
-    $organization->update(['name' => 'Riyadh Cooling', 'tax_number' => '300000000000003']);
+    $organization->update(['name' => 'Riyadh Cooling', 'legal_name' => null, 'tax_number' => '300000000000003', 'address' => 'King Fahd Road', 'city' => 'Riyadh']);
     $customer = dispatchCustomer($organization, 'Olaya Villa');
 
     actingInOrganization($owner, $organization)->post('/invoices', [
@@ -317,7 +317,15 @@ it('adds the organization letterhead to the invoice page', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('Invoices/Show')
-            ->where('letterhead', ['name' => 'Riyadh Cooling', 'tax_number' => '300000000000003'])
+            ->where('letterhead', [
+                'name' => 'Riyadh Cooling',
+                'legal_name' => null,
+                'tax_number' => '300000000000003',
+                'address' => 'King Fahd Road',
+                'city' => 'Riyadh',
+                'phone' => $organization->phone,
+                'email' => $organization->email,
+            ])
             ->has('invoice.invoice_number'));
 
     actingInOrganization($technicianUser, $organization)->get('/invoices/'.$invoice->id)->assertForbidden();

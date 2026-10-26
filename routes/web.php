@@ -77,6 +77,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/work-orders/{work_order}/assign', [WorkOrderController::class, 'assign'])->name('work-orders.assign');
         Route::post('/work-orders/{work_order}/invoice', [InvoiceController::class, 'fromWorkOrder'])->name('work-orders.invoice');
         Route::resource('invoices', InvoiceController::class)->except(['destroy']);
+        Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf');
         Route::post('/invoices/{invoice}/issue', [InvoiceController::class, 'issue'])->name('invoices.issue');
         Route::post('/invoices/{invoice}/cancel', [InvoiceController::class, 'cancel'])->name('invoices.cancel');
         Route::resource('payments', PaymentController::class)->only(['index', 'create', 'store', 'show']);
