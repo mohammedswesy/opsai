@@ -64,7 +64,7 @@ export default function Index({
             key: 'request',
             header: t.ops.relatedRequest,
             truncate: (row) => row.service_request?.subject,
-            cell: (row) => row.service_request?.subject ?? <span className="text-ink-subtle">{t.common.none}</span>,
+            cell: (row) => row.service_request?.subject ?? <span className="text-ink-muted">{t.common.none}</span>,
         },
         { key: 'status', header: t.ops.status, cell: (row) => <StatusBadge value={row.status} /> },
     ];

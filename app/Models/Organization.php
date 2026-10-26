@@ -28,6 +28,8 @@ class Organization extends Model
         'tax_number',
         'phone',
         'email',
+        'address',
+        'city',
         'country',
         'timezone',
         'currency',

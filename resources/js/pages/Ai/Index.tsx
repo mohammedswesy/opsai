@@ -189,10 +189,6 @@ export default function Index({
     return (
         <div className="grid gap-4 lg:grid-cols-[17rem_minmax(0,1fr)]">
             <PageTitle title={t.ai.title} />
-            <aside className={`${surface} hidden self-start p-4 lg:block`}>
-                <h2 className="mb-3 text-heading font-semibold text-ink">{t.ai.conversations}</h2>
-                {conversationList}
-            </aside>
             <Sheet open={sheetOpen} onClose={() => setSheetOpen(false)} title={t.ai.conversations} closeLabel={t.ai.close}>
                 {conversationList}
             </Sheet>
@@ -313,7 +309,7 @@ export default function Index({
                         <textarea
                             ref={composerRef}
                             rows={1}
-                            className={`max-h-40 min-h-11 w-full resize-none rounded-control border border-line bg-surface px-3 py-2.5 text-body text-ink placeholder:text-ink-subtle ${controlFocusClassName}`}
+                            className={`max-h-40 min-h-11 w-full resize-none rounded-control border border-line bg-surface px-3 py-2.5 text-body text-ink placeholder:text-ink-muted ${controlFocusClassName}`}
                             value={draft}
                             placeholder={t.ai.placeholder}
                             aria-label={t.ai.placeholder}
@@ -326,11 +322,16 @@ export default function Index({
                             {t.ai.send}
                         </Button>
                     </div>
-                    <p id="ai-composer-hint" className="mt-1.5 hidden text-micro text-ink-subtle sm:block">
+                    <p id="ai-composer-hint" className="mt-1.5 hidden text-micro text-ink-muted sm:block">
                         {t.ai.composerHint}
                     </p>
                 </form>
             </section>
+            {/* After the thread in the DOM so the page h1 comes first; shown in the first column at lg. */}
+            <aside className={`${surface} hidden self-start p-4 lg:order-first lg:block`}>
+                <h2 className="mb-3 text-heading font-semibold text-ink">{t.ai.conversations}</h2>
+                {conversationList}
+            </aside>
         </div>
     );
 }

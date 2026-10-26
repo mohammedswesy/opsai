@@ -10,9 +10,11 @@ use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\WorkOrder;
 use App\Services\Finance\InvoiceLifecycleService;
+use App\Services\Finance\InvoicePdf;
 use App\Support\OrganizationContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response as HttpResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -84,13 +86,35 @@ class InvoiceController extends Controller
 
         return Inertia::render('Invoices/Show', [
             'invoice' => $invoice,
-            // The organizations table has no address column, so the letterhead carries none.
             'letterhead' => [
                 'name' => $organization->name,
+                'legal_name' => $organization->legal_name,
                 'tax_number' => $organization->tax_number,
+                'address' => $organization->address,
+                'city' => $organization->city,
+                'phone' => $organization->phone,
+                'email' => $organization->email,
             ],
             'canManage' => request()->user()?->can('issue', $invoice) ?? false,
             'canPay' => request()->user()?->can('create', Payment::class) ?? false,
+        ]);
+    }
+
+    /**
+     * The invoice as a PDF in the viewer's current locale. Other organizations' invoices
+     * are outside the tenant scope, so route binding answers 404 before the policy runs.
+     */
+    public function pdf(Invoice $invoice, InvoicePdf $pdf): HttpResponse
+    {
+        $this->authorize('view', $invoice);
+
+        $content = $pdf->render($invoice, OrganizationContext::current()->organization, app()->getLocale());
+        $filename = $pdf->filename($invoice);
+
+        return response($content, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            'Cache-Control' => 'private, no-store',
         ]);
     }
 

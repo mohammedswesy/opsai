@@ -62,6 +62,8 @@ export const en = {
         yourWork: 'Your work',
         breadcrumb: 'Breadcrumb',
         language: 'Language',
+        menu: 'Main menu',
+        skipToContent: 'Skip to main content',
     },
     dashboard: {
         title: 'Dashboard',
@@ -201,6 +203,9 @@ export const en = {
         taxNumber: 'Tax number',
         phone: 'Phone',
         email: 'Email',
+        address: 'Address',
+        city: 'City',
+        taxNumberHint: 'Saudi VAT number: 15 digits that start and end with 3.',
         save: 'Save organization',
         slug: 'Slug',
         current: 'Current',
@@ -420,6 +425,7 @@ export const en = {
         'whatsapp.human_required': 'Handed to a teammate',
     },
     finance: {
+        downloadPdf: 'Download PDF',
         invoiceNumber: 'Invoice number',
         issueDate: 'Issue date',
         dueDate: 'Due date',

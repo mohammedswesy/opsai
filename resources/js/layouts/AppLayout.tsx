@@ -26,6 +26,7 @@ import {
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Avatar } from '@/components/Avatar';
 import { CommandPalette, type CommandLink } from '@/components/CommandPalette';
+import { useModal } from '@/components/Dialog';
 import { FlashMessage, LocaleSwitch, NavigationProgress, useDocumentLocale } from '@/components/Chrome';
 import { PageMetaProvider, type PageMeta } from '@/components/PageTitle';
 import { VisitProvider } from '@/components/VisitState';
@@ -33,6 +34,7 @@ import { useI18n } from '@/i18n';
 import { optionLabel } from '@/lib/labels';
 import { ROLE_NAVIGATION } from '@/lib/navigation';
 import { can } from '@/lib/permissions';
+import { useMediaQuery } from '@/lib/useMediaQuery';
 
 const NAV_GROUPS_KEY = 'opsai.nav.groups';
 
@@ -75,11 +77,15 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     const [paletteOpen, setPaletteOpen] = useState(false);
     const [collapsed, setCollapsed] = useState<Record<string, boolean>>(readCollapsedGroups);
     const [meta, setMeta] = useState<PageMeta | null>(null);
-    const menuButtonRef = useRef<HTMLButtonElement>(null);
+    const drawerRootRef = useRef<HTMLDivElement>(null);
     const drawerRef = useRef<HTMLElement>(null);
     const accountRef = useRef<HTMLDivElement>(null);
     const accountMenuId = useId();
+    // Below lg the sidebar is a modal drawer; at lg and up it is always on screen.
+    const isDesktop = useMediaQuery('(min-width: 64rem)');
+    const drawerModal = open && !isDesktop;
     useDocumentLocale();
+    useModal({ open: drawerModal, onClose: () => setOpen(false), rootRef: drawerRootRef, panelRef: drawerRef });
     const shortcut = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.userAgent) ? '⌘K' : 'Ctrl K';
 
     useEffect(() => {
@@ -160,18 +166,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     const roleLabel = organization ? optionLabel(t.labels, organization.role) : '';
 
     useEffect(() => {
-        if (!open) {
-            return;
+        if (isDesktop) {
+            setOpen(false);
         }
-
-        const previousOverflow = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-        drawerRef.current?.querySelector<HTMLElement>('a, button')?.focus();
-
-        return () => {
-            document.body.style.overflow = previousOverflow;
-        };
-    }, [open]);
+    }, [isDesktop]);
 
     useEffect(() => {
         function onKeyDown(event: KeyboardEvent) {
@@ -181,21 +179,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 setAccountOpen(false);
             }
 
-            if (event.key !== 'Escape') {
-                return;
-            }
-
-            if (paletteOpen) {
-                setPaletteOpen(false);
-            }
-
-            if (accountOpen) {
+            // The palette and the drawer close themselves on Escape (useModal).
+            if (event.key === 'Escape' && accountOpen) {
                 setAccountOpen(false);
-            }
-
-            if (open) {
-                setOpen(false);
-                menuButtonRef.current?.focus();
             }
         }
 
@@ -212,7 +198,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             document.removeEventListener('keydown', onKeyDown);
             document.removeEventListener('pointerdown', onPointerDown);
         };
-    }, [accountOpen, open, paletteOpen]);
+    }, [accountOpen]);
 
     function closeDrawer() {
         setOpen(false);
@@ -222,6 +208,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <VisitProvider>
             <PageMetaProvider onChange={setMeta}>
                 <div className="min-h-screen text-ink">
+                    <a
+                        href="#main-content"
+                        className="fixed start-3 top-3 z-[60] -translate-y-[200%] rounded-control bg-surface px-3 py-2 text-body font-medium text-brand-strong shadow-overlay focus:translate-y-0"
+                    >
+                        {t.nav.skipToContent}
+                    </a>
                     <NavigationProgress />
                     <CommandPalette
                         open={paletteOpen}
@@ -230,97 +222,103 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                         canSearchCustomers={can(permissions, 'customers.view')}
                         canSearchRequests={can(permissions, 'requests.view') && !roleNavigation?.hidden.includes('/requests')}
                     />
-                    <aside
-                        ref={drawerRef}
-                        id="app-navigation"
-                        className={`fixed inset-y-0 start-0 z-40 flex w-64 flex-col border-e border-line bg-surface transition-transform duration-200 ease-out print:hidden lg:translate-x-0 ${
-                            open ? 'translate-x-0' : 'max-lg:-translate-x-full rtl:max-lg:translate-x-full'
-                        }`}
-                    >
-                        <div className="px-3 pt-4">
-                            <Link href="/organizations" className="flex items-center gap-2.5 rounded-control px-2 py-2 hover:bg-surface-muted" title={organization?.name} aria-label={t.nav.switchOrganization}>
-                                <Avatar name={organization?.name ?? t.appName} shape="square" />
-                                <span className="min-w-0">
-                                    <span className="block truncate text-micro font-medium text-ink-muted">{t.appName}</span>
-                                    <span dir="auto" className="block truncate text-body font-semibold text-ink">
-                                        {organization?.name ?? t.nav.switchOrganization}
-                                    </span>
-                                </span>
-                            </Link>
-                        </div>
-                        <nav className="mt-3 flex-1 space-y-4 overflow-y-auto px-3 pb-4" aria-label={t.appName}>
-                            {visibleGroups.map((group) => {
-                                const isCollapsed = collapsed[group.id] === true;
-
-                                return (
-                                    <div key={group.id}>
-                                        <button
-                                            type="button"
-                                            className="flex w-full items-center justify-between rounded-control px-2.5 py-1 text-micro font-semibold text-ink-muted hover:text-ink-secondary ltr:tracking-wide ltr:uppercase"
-                                            aria-expanded={!isCollapsed}
-                                            aria-label={`${isCollapsed ? t.nav.expandGroup : t.nav.collapseGroup} ${group.label}`}
-                                            onClick={() => setCollapsed((current) => ({ ...current, [group.id]: !current[group.id] }))}
-                                        >
-                                            <span className="truncate">{group.label}</span>
-                                            <ChevronDown className={`size-3.5 shrink-0 transition-transform duration-200 ${isCollapsed ? '-rotate-90 rtl:rotate-90' : ''}`} strokeWidth={1.75} aria-hidden="true" />
-                                        </button>
-                                        {isCollapsed ? null : (
-                                            <div className="mt-1 space-y-0.5">
-                                                {group.items.map((item) => {
-                                                    const current = isCurrent(item, page.url);
-
-                                                    return (
-                                                        <Link
-                                                            key={item.href}
-                                                            href={item.href}
-                                                            aria-current={current ? 'page' : undefined}
-                                                            className={`group relative flex items-center gap-2.5 rounded-control px-2.5 py-2 text-body transition-colors duration-200 ${
-                                                                current
-                                                                    ? 'bg-brand-soft font-medium text-brand-strong before:absolute before:inset-y-2 before:start-0 before:w-0.5 before:rounded-badge before:bg-brand'
-                                                                    : 'text-ink-secondary hover:bg-surface-muted hover:text-ink'
-                                                            }`}
-                                                            onClick={closeDrawer}
-                                                        >
-                                                            <item.icon
-                                                                className={`size-[18px] shrink-0 ${current ? 'text-brand' : 'text-ink-subtle group-hover:text-ink-muted'}`}
-                                                                strokeWidth={1.75}
-                                                                aria-hidden="true"
-                                                            />
-                                                            <span className="truncate">{item.label}</span>
-                                                        </Link>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </nav>
-                        {auth.user ? (
-                            <div className="border-t border-line p-3">
-                                <div className="flex items-center gap-2.5 rounded-card bg-surface-muted px-2.5 py-2.5">
-                                    <Avatar name={userName} tone="brand" />
+                    <div ref={drawerRootRef}>
+                        <aside
+                            ref={drawerRef}
+                            id="app-navigation"
+                            role={drawerModal ? 'dialog' : undefined}
+                            aria-modal={drawerModal || undefined}
+                            aria-label={drawerModal ? t.nav.menu : undefined}
+                            className={`fixed inset-y-0 start-0 z-40 flex w-64 flex-col border-e border-line bg-surface duration-200 ease-out print:hidden lg:translate-x-0 ${
+                                // Visible at once on open (so focus can move in), hidden only after the slide-out on close.
+                                open ? 'translate-x-0 transition-transform' : 'transition-[transform,visibility] max-lg:invisible max-lg:-translate-x-full rtl:max-lg:translate-x-full'
+                            }`}
+                        >
+                            <div className="px-3 pt-4">
+                                <Link href="/organizations" className="flex items-center gap-2.5 rounded-control px-2 py-2 hover:bg-surface-muted" title={organization?.name} aria-label={t.nav.switchOrganization}>
+                                    <Avatar name={organization?.name ?? t.appName} shape="square" />
                                     <span className="min-w-0">
-                                        <span dir="auto" className="block truncate text-body font-medium text-ink" title={userName}>
-                                            {userName}
-                                        </span>
-                                        <span className="block truncate text-caption text-ink-muted" title={roleLabel}>
-                                            {roleLabel}
+                                        <span className="block truncate text-micro font-medium text-ink-muted">{t.appName}</span>
+                                        <span dir="auto" className="block truncate text-body font-semibold text-ink">
+                                            {organization?.name ?? t.nav.switchOrganization}
                                         </span>
                                     </span>
-                                </div>
+                                </Link>
                             </div>
-                        ) : null}
-                    </aside>
-                    {open ? <button type="button" className="fixed inset-0 z-30 bg-ink/40 backdrop-blur-[1px] lg:hidden" onClick={closeDrawer} aria-label={t.nav.closeMenu} /> : null}
+                            <nav className="mt-3 flex-1 space-y-4 overflow-y-auto px-3 pb-4" aria-label={t.appName}>
+                                {visibleGroups.map((group) => {
+                                    const isCollapsed = collapsed[group.id] === true;
+
+                                    return (
+                                        <div key={group.id}>
+                                            <button
+                                                type="button"
+                                                className="flex w-full items-center justify-between rounded-control px-2.5 py-1 text-micro font-semibold text-ink-muted hover:text-ink-secondary ltr:tracking-wide ltr:uppercase"
+                                                aria-expanded={!isCollapsed}
+                                                aria-label={`${isCollapsed ? t.nav.expandGroup : t.nav.collapseGroup} ${group.label}`}
+                                                onClick={() => setCollapsed((current) => ({ ...current, [group.id]: !current[group.id] }))}
+                                            >
+                                                <span className="truncate">{group.label}</span>
+                                                <ChevronDown className={`size-3.5 shrink-0 transition-transform duration-200 ${isCollapsed ? '-rotate-90 rtl:rotate-90' : ''}`} strokeWidth={1.75} aria-hidden="true" />
+                                            </button>
+                                            {isCollapsed ? null : (
+                                                <div className="mt-1 space-y-0.5">
+                                                    {group.items.map((item) => {
+                                                        const current = isCurrent(item, page.url);
+
+                                                        return (
+                                                            <Link
+                                                                key={item.href}
+                                                                href={item.href}
+                                                                aria-current={current ? 'page' : undefined}
+                                                                className={`group relative flex items-center gap-2.5 rounded-control px-2.5 py-2 text-body transition-colors duration-200 ${
+                                                                    current
+                                                                        ? 'bg-brand-soft font-medium text-brand-strong before:absolute before:inset-y-2 before:start-0 before:w-0.5 before:rounded-badge before:bg-brand'
+                                                                        : 'text-ink-secondary hover:bg-surface-muted hover:text-ink'
+                                                                }`}
+                                                                onClick={closeDrawer}
+                                                            >
+                                                                <item.icon
+                                                                    className={`size-[18px] shrink-0 ${current ? 'text-brand' : 'text-ink-subtle group-hover:text-ink-muted'}`}
+                                                                    strokeWidth={1.75}
+                                                                    aria-hidden="true"
+                                                                />
+                                                                <span className="truncate">{item.label}</span>
+                                                            </Link>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </nav>
+                            {auth.user ? (
+                                <div className="border-t border-line p-3">
+                                    <div className="flex items-center gap-2.5 rounded-card bg-surface-muted px-2.5 py-2.5">
+                                        <Avatar name={userName} tone="brand" />
+                                        <span className="min-w-0">
+                                            <span dir="auto" className="block truncate text-body font-medium text-ink" title={userName}>
+                                                {userName}
+                                            </span>
+                                            <span className="block truncate text-caption text-ink-muted" title={roleLabel}>
+                                                {roleLabel}
+                                            </span>
+                                        </span>
+                                    </div>
+                                </div>
+                            ) : null}
+                        </aside>
+                        {open ? <div aria-hidden="true" className="fixed inset-0 z-30 bg-ink/40 backdrop-blur-[1px] lg:hidden" onClick={closeDrawer} /> : null}
+                    </div>
                     <div className="lg:ps-64 print:ps-0">
                         <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b border-line bg-surface/80 px-3 backdrop-blur-md print:hidden sm:gap-3 sm:px-6">
                             <button
-                                ref={menuButtonRef}
                                 type="button"
                                 className="shrink-0 rounded-control p-2 text-ink-secondary hover:bg-surface-muted lg:hidden"
                                 onClick={() => setOpen(true)}
                                 aria-label={t.nav.openMenu}
+                                aria-haspopup="dialog"
                                 aria-expanded={open}
                                 aria-controls="app-navigation"
                             >
@@ -344,13 +342,15 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                             <button
                                 type="button"
                                 className="hidden h-9 w-full max-w-xs min-w-0 items-center gap-2 rounded-control bg-surface-muted px-3 text-body text-ink-muted hover:text-ink-secondary md:flex"
+                                aria-haspopup="dialog"
+                                aria-keyshortcuts={shortcut === '⌘K' ? 'Meta+K' : 'Control+K'}
                                 onClick={() => setPaletteOpen(true)}
                             >
                                 <Search className="size-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
                                 <span className="truncate">{t.nav.searchPlaceholder}</span>
-                                <kbd className="ms-auto rounded-control bg-surface px-1.5 py-0.5 text-micro font-medium text-ink-subtle shadow-control">{shortcut}</kbd>
+                                <kbd className="ms-auto rounded-control bg-surface px-1.5 py-0.5 text-micro font-medium text-ink-muted shadow-control">{shortcut}</kbd>
                             </button>
-                            <button type="button" className="shrink-0 rounded-control p-2 text-ink-muted hover:bg-surface-muted md:hidden" aria-label={t.nav.search} onClick={() => setPaletteOpen(true)}>
+                            <button type="button" className="shrink-0 rounded-control p-2 text-ink-muted hover:bg-surface-muted md:hidden" aria-label={t.nav.search} aria-haspopup="dialog" onClick={() => setPaletteOpen(true)}>
                                 <Search className="size-[18px]" strokeWidth={1.75} aria-hidden="true" />
                             </button>
                             <div className="hidden shrink-0 sm:block">
@@ -383,7 +383,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                                             {organization ? (
                                                 <p className="mt-2 truncate text-caption text-ink-secondary" title={`${organization.name} · ${roleLabel}`}>
                                                     <span dir="auto">{organization.name}</span>
-                                                    <span className="text-ink-subtle"> · {roleLabel}</span>
+                                                    <span className="text-ink-muted"> · {roleLabel}</span>
                                                 </p>
                                             ) : null}
                                         </div>
@@ -405,7 +405,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                                 ) : null}
                             </div>
                         </header>
-                        <main className="mx-auto w-full max-w-[1280px] px-4 py-8 sm:px-6 lg:px-8">
+                        <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-[1280px] px-4 py-8 outline-none sm:px-6 lg:px-8">
                             <FlashMessage />
                             {children}
                         </main>

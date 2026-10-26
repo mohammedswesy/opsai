@@ -24,7 +24,7 @@ export function DateInput({
         <span className="relative block">
             <input className={`${controlClassName} ${hideNativeText} ${className}`.trim()} type="date" defaultValue={value} aria-describedby={displayId} {...props} />
             <span id={displayId} className="pointer-events-none absolute inset-y-0 start-3 end-9 flex items-center truncate text-body text-ink">
-                {value ? format.date(value) : <span className="text-ink-subtle">{placeholder}</span>}
+                {value ? format.date(value) : <span className="text-ink-muted">{placeholder}</span>}
             </span>
         </span>
     );

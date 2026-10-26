@@ -1,9 +1,10 @@
 import { router } from '@inertiajs/react';
 import type { AxiosError } from 'axios';
-import { ChevronDown, ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useId, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import { Button, ButtonLink } from '@/components/Button';
 import { Chip } from '@/components/Chip';
+import { Dialog, DialogTitle } from '@/components/Dialog';
 import { EmptyState } from '@/components/EmptyState';
 import { controlClassName } from '@/components/FormField';
 import { Avatar } from '@/components/Avatar';
@@ -12,6 +13,7 @@ import { PriorityBadge } from '@/components/PriorityBadge';
 import { RecordList } from '@/components/RecordList';
 import { StatusBadge } from '@/components/StatusBadge';
 import { TableRow } from '@/components/Table';
+import { Alert } from '@/components/Toast';
 import { useI18n } from '@/i18n';
 import { useFormat } from '@/lib/format';
 import { optionLabel } from '@/lib/labels';
@@ -456,12 +458,9 @@ export default function Index({ board }: { board: Board }) {
         <div data-testid="dispatch-board">
             <PageHeader title={t.dispatch.title} subtitle={t.dispatch.subtitle} />
             {toast ? (
-                <div className="mb-4 flex items-start justify-between gap-3 rounded-card border border-danger-border bg-danger-soft px-4 py-3 text-body text-danger" role="alert">
-                    <p className="min-w-0 break-words">{toast}</p>
-                    <button type="button" className="shrink-0 rounded-control p-1 hover:bg-danger-border" aria-label={t.dispatch.dismiss} onClick={() => setToast(null)}>
-                        <X className="size-4" strokeWidth={1.75} aria-hidden="true" />
-                    </button>
-                </div>
+                <Alert tone="danger" className="mb-4" onDismiss={() => setToast(null)} dismissLabel={t.dispatch.dismiss}>
+                    <p>{toast}</p>
+                </Alert>
             ) : null}
 
             <div className={`${surface} mb-4 flex flex-wrap items-end gap-3 p-4`}>
@@ -592,7 +591,7 @@ export default function Index({ board }: { board: Board }) {
                                     <button
                                         key={job.id}
                                         type="button"
-                                        className="w-full rounded-control border border-line bg-surface p-3 text-start shadow-control transition-colors hover:border-line-strong hover:bg-surface-muted focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+                                        className="w-full rounded-control border border-line bg-surface p-3 text-start shadow-control transition-colors hover:border-line-strong hover:bg-surface-muted focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none"
                                         onClick={() => setUnassignedJob(job)}
                                     >
                                         <p className="text-body font-medium break-words text-ink">
@@ -713,7 +712,7 @@ export default function Index({ board }: { board: Board }) {
                                                         <button
                                                             key={job.id}
                                                             type="button"
-                                                            className={`absolute inset-x-1 z-10 flex flex-col items-start overflow-hidden rounded-control px-2 py-1 text-start text-caption leading-tight transition hover:brightness-95 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none ${blockClass(job)} ${drag?.job.id === job.id ? 'opacity-40' : ''} ${draggable ? 'cursor-grab' : ''}`}
+                                                            className={`absolute inset-x-1 z-10 flex flex-col items-start overflow-hidden rounded-control px-2 py-1 text-start text-caption leading-tight transition hover:brightness-95 focus-visible:ring-2 focus-visible:ring-focus focus-visible:outline-none ${blockClass(job)} ${drag?.job.id === job.id ? 'opacity-40' : ''} ${draggable ? 'cursor-grab' : ''}`}
                                                             style={{
                                                                 top: `${((start - gridStart) / span) * 100}%`,
                                                                 height: `${(Math.max(end - start, 20) / span) * 100}%`,
@@ -938,44 +937,18 @@ function TechnicianHeading({ technician, roleLabel }: { technician: TechnicianCo
     );
 }
 
-/** Side sheet for scheduling and job details: a modal dialog that closes on Escape or backdrop click. */
+/** Side sheet for scheduling and job details, built on the shared modal `Dialog`. */
 function Drawer({ title, onClose, closeLabel, children }: { title: string; onClose: () => void; closeLabel: string; children: ReactNode }) {
-    const titleId = useId();
-    const panelRef = useRef<HTMLElement>(null);
-
-    useEffect(() => {
-        const previous = document.activeElement as HTMLElement | null;
-        panelRef.current?.querySelector<HTMLElement>('button')?.focus();
-
-        function onKeyDown(event: KeyboardEvent) {
-            if (event.key === 'Escape') {
-                onClose();
-            }
-        }
-
-        document.addEventListener('keydown', onKeyDown);
-
-        return () => {
-            document.removeEventListener('keydown', onKeyDown);
-            previous?.focus();
-        };
-    }, [onClose]);
-
     return (
-        <div className="fixed inset-0 z-40 flex justify-end bg-ink/40">
-            <button type="button" tabIndex={-1} className="absolute inset-0" aria-label={closeLabel} onClick={onClose} />
-            <aside ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} className="relative z-10 h-full w-full max-w-md overflow-y-auto border-s border-line bg-surface p-5 shadow-overlay">
-                <div className="mb-4 flex items-center justify-between gap-3">
-                    <h2 id={titleId} className="text-heading font-semibold text-ink">
-                        {title}
-                    </h2>
-                    <Button variant="secondary" onClick={onClose}>
-                        {closeLabel}
-                    </Button>
-                </div>
-                {children}
-            </aside>
-        </div>
+        <Dialog open onClose={onClose} placement="end" className="h-full w-full max-w-md overflow-y-auto border-s border-line bg-surface p-5 shadow-overlay">
+            <div className="mb-4 flex items-center justify-between gap-3">
+                <DialogTitle className="text-heading font-semibold text-ink">{title}</DialogTitle>
+                <Button variant="secondary" onClick={onClose}>
+                    {closeLabel}
+                </Button>
+            </div>
+            {children}
+        </Dialog>
     );
 }
 

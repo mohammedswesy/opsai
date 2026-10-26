@@ -64,6 +64,8 @@ export const ar: Messages = {
         yourWork: 'عملك',
         breadcrumb: 'مسار التنقل',
         language: 'اللغة',
+        menu: 'القائمة الرئيسية',
+        skipToContent: 'تخطَّ إلى المحتوى الرئيسي',
     },
     dashboard: {
         title: 'لوحة المعلومات',
@@ -203,6 +205,9 @@ export const ar: Messages = {
         taxNumber: 'الرقم الضريبي',
         phone: 'الهاتف',
         email: 'البريد الإلكتروني',
+        address: 'العنوان',
+        city: 'المدينة',
+        taxNumberHint: 'الرقم الضريبي السعودي: 15 رقماً يبدأ وينتهي بالرقم 3.',
         save: 'حفظ المنشأة',
         slug: 'المعرّف',
         current: 'الحالية',
@@ -422,6 +427,7 @@ export const ar: Messages = {
         'whatsapp.human_required': 'تم التحويل إلى أحد الزملاء',
     },
     finance: {
+        downloadPdf: 'تنزيل PDF',
         invoiceNumber: 'رقم الفاتورة',
         issueDate: 'تاريخ الإصدار',
         dueDate: 'تاريخ الاستحقاق',

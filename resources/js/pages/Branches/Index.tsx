@@ -28,7 +28,7 @@ export default function BranchesIndex({ branches, canManage }: { branches: Branc
         { key: 'name', header: t.branches.name, primary: true, truncate: (row) => row.name, cell: (row) => row.name },
         { key: 'code', header: t.branches.code, cell: (row) => <bdi dir="ltr">{row.code}</bdi> },
         { key: 'city', header: t.branches.city, truncate: (row) => row.city, cell: (row) => row.city ?? t.common.none },
-        { key: 'phone', header: t.branches.phone, cell: (row) => (row.phone ? <bdi dir="ltr" className="tabular-nums">{row.phone}</bdi> : <span className="text-ink-subtle">{t.common.none}</span>) },
+        { key: 'phone', header: t.branches.phone, cell: (row) => (row.phone ? <bdi dir="ltr" className="tabular-nums">{row.phone}</bdi> : <span className="text-ink-muted">{t.common.none}</span>) },
         { key: 'timezone', header: t.branches.timezone, hideOnMobile: true, cell: (row) => <bdi dir="ltr">{row.timezone}</bdi> },
         { key: 'status', header: t.branches.status, cell: (row) => <StatusBadge value={row.status} /> },
     ];

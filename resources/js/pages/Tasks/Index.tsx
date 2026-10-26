@@ -75,7 +75,7 @@ export default function Index({
             header: t.ops.due,
             cell: (row) => {
                 if (!row.due_at) {
-                    return <span className="text-ink-subtle">{t.common.none}</span>;
+                    return <span className="text-ink-muted">{t.common.none}</span>;
                 }
 
                 const overdue = OPEN_STATUSES.includes(row.status) && new Date(row.due_at).getTime() < now;

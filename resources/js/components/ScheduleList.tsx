@@ -56,7 +56,7 @@ export function ScheduleList({ items, empty, showDate = false, showTechnician = 
                 return (
                     <li key={`${item.type}-${item.id}`} className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-1.5 py-3 first:pt-0 last:pb-0 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
                         <span className="row-span-2 w-24 pt-0.5 sm:row-span-1 text-caption font-medium text-ink-secondary tabular-nums sm:w-32">
-                            {when ? <time dateTime={item.start ?? undefined}>{when}</time> : <span className="text-ink-subtle">{t.common.none}</span>}
+                            {when ? <time dateTime={item.start ?? undefined}>{when}</time> : <span className="text-ink-muted">{t.common.none}</span>}
                             {item.end && !showDate ? <span className="block font-normal text-ink-muted">{format.time(item.end)}</span> : null}
                         </span>
                         <div className="min-w-0">

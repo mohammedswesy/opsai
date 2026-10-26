@@ -14,7 +14,7 @@ export type RowAction = {
     inline?: boolean;
 };
 
-const itemClassName = 'flex w-full items-center rounded-control px-3 py-2 text-start text-body hover:bg-surface-muted focus-visible:bg-surface-muted focus-visible:outline-none';
+const itemClassName = 'flex w-full items-center rounded-control px-3 py-2 text-start text-body hover:bg-surface-muted focus-visible:bg-surface-muted focus-visible:-outline-offset-2';
 
 /**
  * "More actions" button with a menu of secondary row actions. The menu is portalled
@@ -144,7 +144,8 @@ export function RowActionMenu({ actions, describedBy }: { actions: RowAction[]; 
                                       role="menuitem"
                                       className={className}
                                       onClick={() => {
-                                          close(false);
+                                          // Focus the menu button first so a dialog opened by the action returns focus there.
+                                          close();
                                           action.onClick?.();
                                       }}
                                   >

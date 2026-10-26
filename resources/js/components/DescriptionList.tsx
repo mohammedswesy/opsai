@@ -37,7 +37,7 @@ export function DescriptionItem({
     return (
         <div className={`min-w-0 ${full ? 'sm:col-span-full' : ''}`.trim()}>
             <dt className="text-caption font-medium text-ink-muted">{label}</dt>
-            <dd className={`mt-1 text-body break-words ${multiline ? 'whitespace-pre-wrap' : ''} ${empty ? 'text-ink-subtle' : 'text-ink'}`}>
+            <dd className={`mt-1 text-body break-words ${multiline ? 'whitespace-pre-wrap' : ''} ${empty ? 'text-ink-muted' : 'text-ink'}`}>
                 {empty ? t.common.none : ltr ? <bdi dir="ltr">{children}</bdi> : isolate ? <bdi>{children}</bdi> : children}
             </dd>
         </div>

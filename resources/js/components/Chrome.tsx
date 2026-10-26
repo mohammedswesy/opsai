@@ -1,6 +1,6 @@
 import { router, usePage } from '@inertiajs/react';
-import { Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Alert } from '@/components/Toast';
 import { useI18n } from '@/i18n';
 
 export function useDocumentLocale(): void {
@@ -74,9 +74,8 @@ export function FlashMessage() {
     }
 
     return (
-        <div className="mb-4 flex items-start gap-2 rounded-card border border-success-border bg-success-soft px-4 py-3 text-body text-success shadow-control" role="status">
-            <Check className="mt-0.5 size-4 shrink-0" strokeWidth={1.75} />
+        <Alert tone="success" className="mb-4">
             <p>{flash.success ?? flash.status}</p>
-        </div>
+        </Alert>
     );
 }
