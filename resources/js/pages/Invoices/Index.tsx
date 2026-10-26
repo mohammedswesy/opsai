@@ -62,7 +62,7 @@ export default function Index({
                 row.due_date ? (
                     <span className={`md:whitespace-nowrap tabular-nums ${row.status === 'overdue' ? 'font-medium text-danger' : ''}`}>{format.date(row.due_date)}</span>
                 ) : (
-                    <span className="text-ink-subtle">{t.common.none}</span>
+                    <span className="text-ink-muted">{t.common.none}</span>
                 ),
         },
         { key: 'total', header: t.finance.total, numeric: true, cell: (row) => format.money(row.total, row.currency) },

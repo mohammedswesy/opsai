@@ -20,7 +20,7 @@ This is an audit only. No source file was changed. The plan at the end is a prop
 
 ---
 
-## 1. Structure
+## 1. Structure 
 
 ```
 resources/

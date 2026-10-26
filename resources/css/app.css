@@ -40,6 +40,8 @@
     --color-brand-soft: #eff6ff;
     --color-brand-border: #bfdbfe;
     --color-on-brand: #ffffff;
+    /* Keyboard focus ring (outline-focus, ring-focus): a solid 2px ring with a 2px offset. */
+    --color-focus: #2563eb;
 
     --color-success: #047857;
     --color-success-soft: #ecfdf5;
@@ -92,6 +94,11 @@
     background-image: linear-gradient(90deg, var(--color-line) 0%, var(--color-surface-muted) 45%, var(--color-line) 90%);
     background-size: 200% 100%;
     animation: skeleton-shimmer 1.4s ease-in-out infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+        background-image: none;
+        animation: none;
+    }
 }
 
 @keyframes skeleton-shimmer {
@@ -115,11 +122,9 @@ html[dir='rtl'] {
         font-feature-settings: 'cv11', 'ss01';
     }
 
-    /* Interim focus outline until Step 5 replaces it with the solid brand ring. */
-    a:focus-visible,
-    button:focus-visible,
-    [role='menuitem']:focus-visible {
-        outline: 2px solid color-mix(in srgb, var(--color-brand) 40%, transparent);
+    /* Keyboard focus for everything interactive. Text controls add a brand border too (FormField). */
+    :focus-visible {
+        outline: 2px solid var(--color-focus);
         outline-offset: 2px;
     }
 }

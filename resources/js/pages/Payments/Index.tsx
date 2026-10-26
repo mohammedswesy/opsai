@@ -47,7 +47,7 @@ export default function Index({ payments, filters, canManage }: { payments: Pagi
                         {row.customer_name}
                     </bdi>
                 ) : (
-                    <span className="text-ink-subtle">{t.common.none}</span>
+                    <span className="text-ink-muted">{t.common.none}</span>
                 ),
         },
         { key: 'amount', header: t.finance.amount, numeric: true, cell: (row) => <span className="font-medium text-ink">{format.money(row.amount, row.currency)}</span> },
@@ -63,7 +63,7 @@ export default function Index({ payments, filters, canManage }: { payments: Pagi
                         {row.reference}
                     </bdi>
                 ) : (
-                    <span className="text-ink-subtle">{t.common.none}</span>
+                    <span className="text-ink-muted">{t.common.none}</span>
                 ),
         },
     ];

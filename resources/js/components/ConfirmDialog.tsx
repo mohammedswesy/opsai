@@ -1,5 +1,11 @@
+import { useRef } from 'react';
 import { Button } from '@/components/Button';
+import { Dialog, DialogTitle } from '@/components/Dialog';
 
+/**
+ * Confirmation as an `alertdialog`. Focus starts on Cancel so Enter never confirms a
+ * destructive action by accident; Escape and the backdrop cancel.
+ */
 export function ConfirmDialog({
     open,
     title,
@@ -18,21 +24,19 @@ export function ConfirmDialog({
     /** `danger` gives the confirm button the destructive style (archive, cancel, refund, remove). */
     tone?: 'default' | 'danger';
 }) {
-    if (!open) {
-        return null;
-    }
+    const cancelRef = useRef<HTMLButtonElement>(null);
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4">
-            <div className="w-full max-w-md rounded-card border border-line bg-surface p-6 shadow-lg" role="dialog" aria-modal="true">
-                <p className="text-body/6 text-ink">{title}</p>
-                <div className="mt-6 flex justify-end gap-2">
-                    <Button onClick={onCancel}>{cancelLabel}</Button>
-                    <Button variant={tone === 'danger' ? 'danger' : 'primary'} onClick={onConfirm}>
-                        {confirmLabel}
-                    </Button>
-                </div>
+        <Dialog open={open} onClose={onCancel} role="alertdialog" initialFocusRef={cancelRef} className="w-full max-w-md rounded-card border border-line bg-surface p-6 shadow-overlay">
+            <DialogTitle className="text-body/6 font-normal text-ink">{title}</DialogTitle>
+            <div className="mt-6 flex justify-end gap-2">
+                <Button ref={cancelRef} onClick={onCancel}>
+                    {cancelLabel}
+                </Button>
+                <Button variant={tone === 'danger' ? 'danger' : 'primary'} onClick={onConfirm}>
+                    {confirmLabel}
+                </Button>
             </div>
-        </div>
+        </Dialog>
     );
 }

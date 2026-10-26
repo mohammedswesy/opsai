@@ -64,6 +64,8 @@ export const ar: Messages = {
         yourWork: 'عملك',
         breadcrumb: 'مسار التنقل',
         language: 'اللغة',
+        menu: 'القائمة الرئيسية',
+        skipToContent: 'تخطَّ إلى المحتوى الرئيسي',
     },
     dashboard: {
         title: 'لوحة المعلومات',

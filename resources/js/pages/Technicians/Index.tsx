@@ -83,7 +83,7 @@ export default function Index({
             header: t.ops.skills,
             cell: (row) =>
                 row.skills.length === 0 ? (
-                    <span className="text-ink-subtle">{t.common.none}</span>
+                    <span className="text-ink-muted">{t.common.none}</span>
                 ) : (
                     <span className="flex flex-wrap gap-1">
                         {row.skills.map((skill) => (

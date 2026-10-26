@@ -1,6 +1,6 @@
 import { Link, type InertiaLinkProps } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type { ButtonHTMLAttributes, ReactNode, Ref } from 'react';
 
 const variants = {
     primary: 'border border-transparent bg-brand bg-brand-gradient text-on-brand shadow-control hover:brightness-96',
@@ -29,6 +29,7 @@ export function buttonClassName(variant: ButtonVariant = 'secondary', className 
 }
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+    ref?: Ref<HTMLButtonElement>;
     variant?: ButtonVariant;
     size?: ButtonSize;
     /** Disables the button and shows a spinner; the label stays so the width does not jump. */

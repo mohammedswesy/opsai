@@ -141,7 +141,7 @@ export default function Show({ invoice, canManage, canPay, letterhead = null }: 
                                     ) : null}
                                 </div>
                             ) : (
-                                <p className="mt-1 text-body text-ink-subtle">{t.common.none}</p>
+                                <p className="mt-1 text-body text-ink-muted">{t.common.none}</p>
                             )}
                         </div>
                     </div>

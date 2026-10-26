@@ -77,7 +77,7 @@ export default function UsersIndex({
                 const names = row.branch_ids.map((id) => branchNames.get(id)).filter((name): name is string => Boolean(name));
 
                 return names.length === 0 ? (
-                    <span className="text-ink-subtle">{t.common.none}</span>
+                    <span className="text-ink-muted">{t.common.none}</span>
                 ) : (
                     <span className="flex flex-wrap gap-1">
                         {names.map((name) => (

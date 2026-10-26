@@ -19,7 +19,7 @@ type MessageRow = {
     created_at: string | null;
 };
 
-const fieldClassName = `min-h-11 w-full rounded-control border border-line bg-surface px-3 text-body text-ink placeholder:text-ink-subtle ${controlFocusClassName}`;
+const fieldClassName = `min-h-11 w-full rounded-control border border-line bg-surface px-3 text-body text-ink placeholder:text-ink-muted ${controlFocusClassName}`;
 
 export default function Show({
     conversation,
@@ -143,7 +143,7 @@ export default function Show({
                             >
                                 <textarea
                                     rows={1}
-                                    className={`max-h-32 min-h-11 w-full resize-none rounded-control border border-line bg-surface px-3 py-2.5 text-body text-ink placeholder:text-ink-subtle ${controlFocusClassName}`}
+                                    className={`max-h-32 min-h-11 w-full resize-none rounded-control border border-line bg-surface px-3 py-2.5 text-body text-ink placeholder:text-ink-muted ${controlFocusClassName}`}
                                     aria-label={t.whatsapp.reply}
                                     placeholder={t.whatsapp.reply}
                                     value={reply.data.message}

@@ -62,6 +62,8 @@ export const en = {
         yourWork: 'Your work',
         breadcrumb: 'Breadcrumb',
         language: 'Language',
+        menu: 'Main menu',
+        skipToContent: 'Skip to main content',
     },
     dashboard: {
         title: 'Dashboard',

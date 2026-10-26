@@ -1,7 +1,7 @@
 import { cloneElement, isValidElement, useId, type InputHTMLAttributes, type ReactElement, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
 
 /** Focus border and ring for every text control, including ones with their own sizing. */
-export const controlFocusClassName = 'outline-none transition-[border-color,box-shadow] duration-180 focus:border-brand focus:ring-3 focus:ring-brand/40';
+export const controlFocusClassName = 'transition-[border-color] duration-180 focus:border-focus focus:outline-2 focus:outline-offset-2 focus:outline-focus';
 
 /** Shared look for text inputs, selects and textareas, including the focus ring. */
 export const controlClassName = `min-h-10 w-full rounded-control border border-line/80 bg-surface px-3 text-body text-ink ${controlFocusClassName}`;
