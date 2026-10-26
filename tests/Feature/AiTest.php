@@ -166,7 +166,8 @@ it('returns a safe message when the provider fails', function () {
 
     aiChat($owner, $organization, 'How many open requests do we have?')
         ->assertStatus(503)
-        ->assertJsonPath('message', 'The assistant is unavailable right now.');
+        ->assertJsonPath('message', 'The AI service is unavailable right now. Try again later.')
+        ->assertJsonPath('reason', 'unavailable');
 });
 
 it('rate limits assistant requests', function () {

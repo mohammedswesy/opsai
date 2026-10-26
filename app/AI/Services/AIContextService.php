@@ -23,7 +23,7 @@ class AIContextService
 
         return [
             'organization_name' => $organization->name,
-            'locale' => $organization->locale,
+            'organization_locale' => $organization->locale,
             'currency' => $organization->currency,
             'timezone' => $organization->timezone,
             'current_time' => now($organization->timezone)->toIso8601String(),
@@ -41,7 +41,7 @@ class AIContextService
 
         return [
             'organization_name' => $organization->name,
-            'locale' => $organization->locale,
+            'organization_locale' => $organization->locale,
             'timezone' => $organization->timezone,
             'current_time' => now($organization->timezone)->toIso8601String(),
             'actor' => 'customer',

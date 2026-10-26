@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\AI\Support\AIErrorMessages;
+use App\Http\Controllers\AiChatController;
 use App\Models\Appointment;
 use App\Models\Customer;
 use App\Models\Invoice;
@@ -53,7 +55,12 @@ class AppServiceProvider extends ServiceProvider
         });
 
         RateLimiter::for('ai', function (Request $request) {
-            return Limit::perMinute((int) config('ai.rate_limit_per_minute'))->by((string) ($request->user()?->id ?: $request->ip()));
+            return Limit::perMinute((int) config('ai.rate_limit_per_minute'))
+                ->by((string) ($request->user()?->id ?: $request->ip()))
+                ->response(fn (Request $request, array $headers) => response()->json([
+                    'message' => AIErrorMessages::for('too_many_messages', AiChatController::interfaceLocale($request)),
+                    'reason' => 'too_many_messages',
+                ], 429, $headers));
         });
 
         RateLimiter::for('whatsapp-webhook', function (Request $request) {
