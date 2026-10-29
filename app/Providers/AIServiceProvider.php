@@ -52,9 +52,7 @@ class AIServiceProvider extends ServiceProvider
             {
                 public function complete(array $messages, array $tools): never
                 {
-                    throw new AIException('The assistant is not configured.', 503, [
-                        'reason' => 'unsupported_provider',
-                    ]);
+                    throw AIException::because('unsupported_provider', 503);
                 }
             };
         });

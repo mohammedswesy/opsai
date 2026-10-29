@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Integration;
 use App\Models\WhatsAppConversation;
 use App\WhatsApp\Contracts\WhatsAppProviderInterface;
+use App\WhatsApp\WebhookSecrets;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -41,11 +42,12 @@ class WhatsAppSimulationController extends Controller
         ];
 
         $body = json_encode($payload) ?: '{}';
-        $signature = 'sha256='.hash_hmac('sha256', $body, (string) config('whatsapp.app_secret'));
+        $secrets = app(WebhookSecrets::class);
+        $signature = 'sha256='.hash_hmac('sha256', $body, $secrets->appSecrets()[0] ?? '');
         $forward = Request::create('/webhooks/whatsapp', 'POST', content: $body);
         $forward->headers->set('Content-Type', 'application/json');
         $forward->headers->set('X-Hub-Signature-256', $signature);
-        app(WhatsAppWebhookController::class)->store($forward, $provider);
+        app(WhatsAppWebhookController::class)->store($forward, $provider, $secrets);
 
         return back();
     }

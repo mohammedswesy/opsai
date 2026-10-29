@@ -34,6 +34,7 @@ use App\Models\Technician;
 use App\Models\User;
 use App\Models\WhatsAppConversation;
 use App\Models\WhatsAppMessage;
+use App\Models\WhatsAppTemplate;
 use App\Models\WorkOrder;
 use App\Services\Finance\InvoiceLifecycleService;
 use App\Services\Finance\PaymentService;
@@ -163,6 +164,7 @@ class DemoDataSeeder extends Seeder
 
         WhatsAppMessage::withoutGlobalScope('organization')->where('organization_id', $id)->delete();
         WhatsAppConversation::withoutGlobalScope('organization')->where('organization_id', $id)->delete();
+        WhatsAppTemplate::withoutGlobalScope('organization')->where('organization_id', $id)->delete();
         Integration::withoutGlobalScope('organization')->where('organization_id', $id)->delete();
 
         unset($technicianIds);
@@ -826,6 +828,77 @@ class DemoDataSeeder extends Seeder
                     'metadata' => ['author' => $direction === 'inbound' ? 'customer' : 'assistant'],
                 ]);
             }
+        }
+
+        $this->whatsappTemplates($integration, $customers, $display);
+    }
+
+    /**
+     * Approved reminder and confirmation templates (as after whatsapp:templates:sync),
+     * opt-in for a few households, and one conversation whose 24-hour window has closed.
+     *
+     * @param  list<Customer>  $customers
+     */
+    private function whatsappTemplates(Integration $integration, array $customers, string $display): void
+    {
+        foreach ((array) config('whatsapp.templates') as $purpose => $definition) {
+            foreach ((array) config('whatsapp.template_languages') as $language) {
+                WhatsAppTemplate::query()->create([
+                    'name' => $definition['name'],
+                    'language' => $language,
+                    'purpose' => $purpose,
+                    'status' => 'approved',
+                    'provider_status' => 'APPROVED',
+                    'category' => 'UTILITY',
+                    'parameters' => $definition['parameters'],
+                    'synced_at' => now()->subDay(),
+                ]);
+            }
+        }
+
+        foreach (array_slice($customers, 0, 6) as $customer) {
+            $customer->update(['whatsapp_opt_in_at' => now()->subMonth()]);
+        }
+
+        $threadCustomerIds = array_map(fn (Customer $customer) => $customer->id, array_slice($customers, 0, 4));
+        $appointment = Appointment::query()
+            ->whereIn('status', ['scheduled', 'confirmed'])
+            ->where('scheduled_start', '>', now())
+            ->whereNotIn('customer_id', $threadCustomerIds)
+            ->orderBy('scheduled_start')
+            ->first();
+        $customer = $appointment?->customer;
+
+        if ($customer === null) {
+            return;
+        }
+
+        $conversation = WhatsAppConversation::query()->create([
+            'integration_id' => $integration->id,
+            'customer_id' => $customer->id,
+            'contact_phone' => $customer->phone,
+            'contact_name' => $customer->name,
+            'status' => 'open',
+            'unread_count' => 0,
+            'last_message_at' => now()->subDays(2),
+        ]);
+
+        foreach ([['متى يوصل الفني؟', 'inbound', $customer->phone, $display, 'received', 49], ['الفني في الطريق إليكم، الوصول خلال ساعة تقريباً.', 'outbound', $display, $customer->phone, 'read', 48]] as $index => [$text, $direction, $from, $to, $status, $hoursAgo]) {
+            $message = new WhatsAppMessage([
+                'customer_id' => $customer->id,
+                'integration_id' => $integration->id,
+                'whatsapp_conversation_id' => $conversation->id,
+                'external_message_id' => 'demo-wa-closed-'.$index,
+                'direction' => $direction,
+                'from_number' => $from,
+                'to_number' => $to,
+                'message_type' => 'text',
+                'text' => $text,
+                'status' => $status,
+                'sent_at' => now()->subHours($hoursAgo),
+                'metadata' => ['author' => $direction === 'inbound' ? 'customer' : 'staff'],
+            ]);
+            $message->forceFill(['created_at' => now()->subHours($hoursAgo), 'updated_at' => now()->subHours($hoursAgo)])->save();
         }
     }
 

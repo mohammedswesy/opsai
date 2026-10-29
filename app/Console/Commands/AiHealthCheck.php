@@ -42,7 +42,9 @@ class AiHealthCheck extends Command
                 new AIMessage('user', 'Reply with the single word ok.'),
             ], []);
         } catch (AIException $exception) {
-            $this->error($exception->publicMessage);
+            // The reason code (invalid_api_key, insufficient_quota, rate_limited, timeout, ...) says what to fix.
+            $this->error('Reason: '.$exception->reason());
+            $this->error($exception->userMessage('en'));
 
             return self::FAILURE;
         }

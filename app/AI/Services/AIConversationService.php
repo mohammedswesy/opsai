@@ -9,6 +9,7 @@ use App\AI\Data\AIToolContext;
 use App\AI\Exceptions\AIException;
 use App\AI\Prompts\CustomerAssistantPrompt;
 use App\AI\Prompts\OperationsAssistantPrompt;
+use App\AI\Support\ReplyLanguage;
 use App\AI\Tools\AIToolRegistry;
 use App\Enums\AiActionStatus;
 use App\Enums\AiConversationStatus;
@@ -17,6 +18,7 @@ use App\Models\AiAction;
 use App\Models\AiConversation;
 use App\Models\AiMessage;
 use App\Models\User;
+use App\Support\OrganizationContext;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -32,20 +34,23 @@ class AIConversationService
 
     /**
      * @param  array<string, mixed>  $input
+     * @param  string|null  $locale  The user's interface locale, used when the message has no clear language.
      * @return array<string, mixed>
      */
-    public function chat(User $user, array $input, ?string $branchId): array
+    public function chat(User $user, array $input, ?string $branchId, ?string $locale = null): array
     {
         $conversation = $this->conversation($user, $input['conversation_id'] ?? null, $input['message']);
 
-        return $this->accept($conversation, $input['message'], new AIToolContext($user, $branchId));
+        return $this->accept($conversation, $input['message'], new AIToolContext($user, $branchId), $locale);
     }
 
     /**
+     * @param  string|null  $locale  Fallback reply language; defaults to the organization locale.
      * @return array<string, mixed>
      */
-    public function accept(AiConversation $conversation, string $message, AIToolContext $toolContext): array
+    public function accept(AiConversation $conversation, string $message, AIToolContext $toolContext, ?string $locale = null): array
     {
+        $language = ReplyLanguage::resolve($message, $locale ?? OrganizationContext::current()?->organization->locale);
         $userMessage = $conversation->messages()->create([
             'role' => AiMessageRole::User,
             'content' => $message,
@@ -59,11 +64,11 @@ class AIConversationService
 
         try {
             while ($calls <= $maxCalls) {
-                $response = $this->provider->complete($this->transcript($conversation, $toolContext->branchId), $this->tools->definitionsFor($toolContext));
+                $response = $this->provider->complete($this->transcript($conversation, $toolContext->branchId, $language), $this->tools->definitionsFor($toolContext));
                 $calls++;
 
                 if ($response->toolCalls === []) {
-                    $assistant = $this->storeAssistant($conversation, $response->content ?: 'I do not have that information.', $response, $started, $toolsUsed);
+                    $assistant = $this->storeAssistant($conversation, $response->content ?: __('I do not have that information.', [], $language->code), $response, $started, $toolsUsed);
 
                     return $this->payload($conversation, $assistant, null, $toolsUsed);
                 }
@@ -85,7 +90,7 @@ class AIConversationService
 
                     if ($outcome instanceof AiAction) {
                         $pending = $outcome;
-                        $assistant = $this->storeAssistant($conversation, 'Please confirm this action before I save it.', $response, $started, $toolsUsed);
+                        $assistant = $this->storeAssistant($conversation, __('Please confirm this action before I save it.', [], $language->code), $response, $started, $toolsUsed);
 
                         return $this->payload($conversation, $assistant, $pending, $toolsUsed);
                     }
@@ -100,7 +105,7 @@ class AIConversationService
             throw $exception;
         }
 
-        $assistant = $this->storeAssistant($conversation, 'I stopped because that request needed too many lookups.', null, $started, $toolsUsed);
+        $assistant = $this->storeAssistant($conversation, __('I stopped because that request needed too many lookups.', [], $language->code), null, $started, $toolsUsed);
 
         return $this->payload($conversation, $assistant, $pending, $toolsUsed);
     }
@@ -139,7 +144,7 @@ class AIConversationService
     /**
      * @return list<PromptMessage>
      */
-    private function transcript(AiConversation $conversation, ?string $branchId): array
+    private function transcript(AiConversation $conversation, ?string $branchId, ReplyLanguage $language): array
     {
         $instructions = $conversation->channel === 'customer'
             ? app(CustomerAssistantPrompt::class)->text($this->context->describeCustomer($conversation->customer))
@@ -147,6 +152,7 @@ class AIConversationService
 
         $messages = [
             new PromptMessage('system', $instructions),
+            new PromptMessage('system', $language->rule()),
         ];
 
         foreach ($conversation->messages()->orderBy('id')->get() as $message) {

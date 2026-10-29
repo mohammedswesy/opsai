@@ -9,13 +9,21 @@ interface WhatsAppProviderInterface
     public function sendTextMessage(string $to, string $body, string $phoneNumberId, ?string $accessToken = null): WhatsAppSendResult;
 
     /**
-     * @param  array<string, mixed>  $components
+     * @param  list<array<string, mixed>>  $components  Graph API template components (body parameters, ...)
      */
     public function sendTemplateMessage(string $to, string $template, string $language, string $phoneNumberId, array $components = [], ?string $accessToken = null): WhatsAppSendResult;
 
+    /**
+     * Names, languages and review statuses of the templates in a WhatsApp Business Account.
+     *
+     * @return list<array{name: string, language: string, status: string, category: string|null}>
+     */
+    public function listTemplates(string $businessAccountId, ?string $accessToken = null): array;
+
     public function sendMediaMessage(string $to, string $mediaId, string $phoneNumberId, ?string $accessToken = null): WhatsAppSendResult;
 
-    public function verifyWebhook(string $mode, string $token, string $challenge): ?string;
+    /** `$expected` overrides the configured verify token (for one saved in settings). */
+    public function verifyWebhook(string $mode, string $token, string $challenge, ?string $expected = null): ?string;
 
     /**
      * @param  array<string, mixed>  $payload
@@ -29,7 +37,8 @@ interface WhatsAppProviderInterface
      */
     public function parseDeliveryStatus(array $payload): array;
 
-    public function verifySignature(string $payload, ?string $signature): bool;
+    /** `$secret` overrides the configured app secret (for one saved in settings). */
+    public function verifySignature(string $payload, ?string $signature, ?string $secret = null): bool;
 
     /**
      * @param  array<string, mixed>  $credentials

@@ -94,6 +94,18 @@ final class LocaleFormat
         return $this->pattern('yMMMd', $this->timezone, $value).$separator.$this->pattern('HHmm', $this->timezone, $value);
     }
 
+    /** The calendar day of an instant in the organization timezone. */
+    public function day(DateTimeInterface $value): string
+    {
+        return $this->pattern('yMMMd', $this->timezone, $value);
+    }
+
+    /** The 24-hour time of an instant in the organization timezone. */
+    public function time(DateTimeInterface $value): string
+    {
+        return $this->pattern('HHmm', $this->timezone, $value);
+    }
+
     private function pattern(string $skeleton, string $timezone, DateTimeInterface|string $value): string
     {
         $pattern = (new IntlDatePatternGenerator($this->icuLocale))->getBestPattern($skeleton);

@@ -8,6 +8,7 @@ use App\AI\Data\AIResponse;
 use App\AI\Data\AIToolCall;
 use App\AI\Exceptions\AIException;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -18,7 +19,9 @@ class OpenAIProvider implements AIProviderInterface
         $apiKey = config('ai.api_key');
 
         if (! is_string($apiKey) || $apiKey === '') {
-            throw new AIException('The assistant is not configured.', 503, ['reason' => 'missing_api_key']);
+            Log::warning('ai.openai.config', ['reason' => 'missing_api_key']);
+
+            throw AIException::because('missing_api_key', 503);
         }
 
         $payload = [
@@ -48,28 +51,16 @@ class OpenAIProvider implements AIProviderInterface
                 ->acceptJson()
                 ->timeout((int) config('ai.timeout'))
                 ->post('https://api.openai.com/v1/responses', $payload);
-        } catch (ConnectionException) {
-            Log::warning('ai.openai.connection', ['reason' => 'timeout']);
+        } catch (ConnectionException $exception) {
+            // cURL error 28 is a timeout; anything else (DNS, TLS, refused) means the API was not reached.
+            $timedOut = preg_match('/cURL error 28|timed out/i', $exception->getMessage()) === 1;
+            Log::warning('ai.openai.connection', ['reason' => $timedOut ? 'timeout' : 'unreachable']);
 
-            throw new AIException('The assistant took too long to respond.', 504, ['reason' => 'timeout']);
-        }
-
-        if ($response->status() === 401) {
-            Log::warning('ai.openai.http', ['reason' => 'invalid_api_key', 'status' => 401]);
-
-            throw new AIException('The assistant is not configured.', 503, ['reason' => 'invalid_api_key']);
-        }
-
-        if ($response->status() === 429) {
-            Log::warning('ai.openai.http', ['reason' => 'rate_limited', 'status' => 429]);
-
-            throw new AIException('The assistant is busy. Please try again in a moment.', 429, ['reason' => 'rate_limited']);
+            throw $timedOut ? AIException::because('timeout', 504) : AIException::because('unreachable', 503);
         }
 
         if ($response->failed()) {
-            Log::warning('ai.openai.http', ['reason' => 'http_error', 'status' => $response->status()]);
-
-            throw new AIException('The assistant is unavailable right now.', 503, ['reason' => 'http_error']);
+            throw $this->httpFailure($response);
         }
 
         $output = $response->json('output');
@@ -77,7 +68,7 @@ class OpenAIProvider implements AIProviderInterface
         if (! is_array($output)) {
             Log::warning('ai.openai.malformed', ['reason' => 'missing_output']);
 
-            throw new AIException('The assistant returned a response I could not use.', 502, ['reason' => 'malformed_response']);
+            throw AIException::because('malformed_response', 502);
         }
 
         $text = '';
@@ -85,7 +76,7 @@ class OpenAIProvider implements AIProviderInterface
 
         foreach ($output as $item) {
             if (! is_array($item)) {
-                throw new AIException('The assistant returned a response I could not use.', 502, ['reason' => 'malformed_response']);
+                throw AIException::because('malformed_response', 502);
             }
 
             if (($item['type'] ?? null) === 'message') {
@@ -109,6 +100,38 @@ class OpenAIProvider implements AIProviderInterface
             ] : [],
             is_string($response->json('model')) ? $response->json('model') : config('ai.model'),
         );
+    }
+
+    /**
+     * Maps a failed response to a reason the user can act on, and logs what an operator
+     * needs (status, OpenAI error type and code, request id) but never the error message,
+     * which can quote part of the API key.
+     */
+    private function httpFailure(Response $response): AIException
+    {
+        $status = $response->status();
+        $type = $response->json('error.type');
+        $code = $response->json('error.code');
+        $quota = $type === 'insufficient_quota' || $code === 'insufficient_quota';
+
+        [$reason, $publicStatus] = match (true) {
+            $status === 401 => ['invalid_api_key', 503],
+            $status === 429 && $quota => ['insufficient_quota', 503],
+            $status === 429 => ['rate_limited', 429],
+            in_array($status, [408, 504], true) => ['timeout', 504],
+            default => ['unavailable', 503],
+        };
+
+        Log::warning('ai.openai.http', [
+            'reason' => $reason,
+            'status' => $status,
+            'error_type' => is_string($type) ? $type : null,
+            'error_code' => is_string($code) ? $code : null,
+            'request_id' => $response->header('x-request-id') ?: null,
+            'retry_after' => $response->header('retry-after') ?: null,
+        ]);
+
+        return AIException::because($reason, $publicStatus);
     }
 
     /**
@@ -180,7 +203,7 @@ class OpenAIProvider implements AIProviderInterface
         }
 
         if (! is_array($content)) {
-            throw new AIException('The assistant returned a response I could not use.', 502, ['reason' => 'malformed_response']);
+            throw AIException::because('malformed_response', 502);
         }
 
         $text = '';
@@ -204,13 +227,13 @@ class OpenAIProvider implements AIProviderInterface
         $arguments = $item['arguments'] ?? null;
 
         if (! is_string($id) || ! is_string($name) || ! is_string($arguments)) {
-            throw new AIException('The assistant returned a response I could not use.', 502, ['reason' => 'malformed_tool_call']);
+            throw AIException::because('malformed_tool_call', 502);
         }
 
         $decoded = json_decode($arguments, true);
 
         if (! is_array($decoded)) {
-            throw new AIException('The assistant returned a response I could not use.', 502, ['reason' => 'malformed_tool_call']);
+            throw AIException::because('malformed_tool_call', 502);
         }
 
         return new AIToolCall($id, $name, $decoded);

@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('invoices:mark-overdue')->daily();
+Schedule::command('whatsapp:send-reminders')->hourly()->withoutOverlapping();

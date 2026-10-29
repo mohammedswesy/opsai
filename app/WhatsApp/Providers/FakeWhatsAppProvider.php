@@ -10,22 +10,40 @@ use Illuminate\Support\Str;
 
 class FakeWhatsAppProvider implements WhatsAppProviderInterface
 {
+    /** A saved access token with this value behaves like one Meta rejects (error 190). */
+    public const INVALID_TOKEN = 'fake-invalid-token';
+
     public function __construct(private readonly WhatsAppPayload $payload) {}
 
     public function sendTextMessage(string $to, string $body, string $phoneNumberId, ?string $accessToken = null): WhatsAppSendResult
     {
-        $this->guardFailure();
+        $this->guardFailure($accessToken);
 
         return new WhatsAppSendResult('wamid.fake.'.Str::ulid(), 'sent');
     }
 
     public function sendTemplateMessage(string $to, string $template, string $language, string $phoneNumberId, array $components = [], ?string $accessToken = null): WhatsAppSendResult
     {
-        if ($template === '' || ! config('whatsapp.templates_enabled')) {
+        if ($template === '' || $language === '') {
             throw new WhatsAppException('WhatsApp templates are not configured.', 'template_not_configured');
         }
 
         return $this->sendTextMessage($to, $template, $phoneNumberId, $accessToken);
+    }
+
+    /** Every configured template, approved in both languages. */
+    public function listTemplates(string $businessAccountId, ?string $accessToken = null): array
+    {
+        $this->guardFailure($accessToken);
+        $templates = [];
+
+        foreach ((array) config('whatsapp.templates') as $definition) {
+            foreach ((array) config('whatsapp.template_languages') as $language) {
+                $templates[] = ['name' => (string) $definition['name'], 'language' => (string) $language, 'status' => 'APPROVED', 'category' => 'UTILITY'];
+            }
+        }
+
+        return $templates;
     }
 
     public function sendMediaMessage(string $to, string $mediaId, string $phoneNumberId, ?string $accessToken = null): WhatsAppSendResult
@@ -33,9 +51,9 @@ class FakeWhatsAppProvider implements WhatsAppProviderInterface
         return $this->sendTextMessage($to, $mediaId, $phoneNumberId, $accessToken);
     }
 
-    public function verifyWebhook(string $mode, string $token, string $challenge): ?string
+    public function verifyWebhook(string $mode, string $token, string $challenge, ?string $expected = null): ?string
     {
-        $expected = (string) config('whatsapp.verify_token');
+        $expected ??= (string) config('whatsapp.verify_token');
 
         if ($mode === 'subscribe' && $expected !== '' && hash_equals($expected, $token)) {
             return $challenge;
@@ -54,9 +72,9 @@ class FakeWhatsAppProvider implements WhatsAppProviderInterface
         return $this->payload->statuses($payload);
     }
 
-    public function verifySignature(string $payload, ?string $signature): bool
+    public function verifySignature(string $payload, ?string $signature, ?string $secret = null): bool
     {
-        $secret = (string) config('whatsapp.app_secret');
+        $secret ??= (string) config('whatsapp.app_secret');
 
         if ($secret === '' || $signature === null || ! str_starts_with($signature, 'sha256=')) {
             return false;
@@ -70,6 +88,7 @@ class FakeWhatsAppProvider implements WhatsAppProviderInterface
     public function verifyConnection(array $credentials, array $metadata): array
     {
         $phoneNumberId = (string) ($metadata['phone_number_id'] ?? '');
+        $this->guardFailure(is_string($credentials['access_token'] ?? null) ? $credentials['access_token'] : null);
 
         if ($phoneNumberId === '') {
             throw new WhatsAppException('The WhatsApp phone number is not configured.', 'missing_phone');
@@ -81,8 +100,12 @@ class FakeWhatsAppProvider implements WhatsAppProviderInterface
         ];
     }
 
-    private function guardFailure(): void
+    private function guardFailure(?string $accessToken = null): void
     {
+        if ($accessToken === self::INVALID_TOKEN) {
+            throw new WhatsAppException('The WhatsApp access token is invalid or expired.', 'access_token_invalid');
+        }
+
         if (config('whatsapp.fake_fail') === true) {
             throw new WhatsAppException('The WhatsApp provider could not send the message.', 'provider_failure');
         }

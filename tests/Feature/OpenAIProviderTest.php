@@ -21,7 +21,8 @@ it('reports a missing api key without calling openai', function () {
         ->withHeaders(['origin' => 'http://localhost', 'referer' => 'http://localhost'])
         ->postJson('/api/ai/chat', ['message' => 'How many open service requests do we have?'])
         ->assertStatus(503)
-        ->assertJsonPath('message', 'The assistant is not configured.');
+        ->assertJsonPath('message', 'The assistant is not set up yet. Ask an administrator to add the AI API key.')
+        ->assertJsonPath('reason', 'not_configured');
 
     Http::assertNothingSent();
 });
@@ -38,7 +39,8 @@ it('reports an invalid api key without returning the provider body', function ()
         ->withHeaders(['origin' => 'http://localhost', 'referer' => 'http://localhost'])
         ->postJson('/api/ai/chat', ['message' => 'How many open service requests do we have?'])
         ->assertStatus(503)
-        ->assertJsonPath('message', 'The assistant is not configured.')
+        ->assertJsonPath('message', 'The assistant cannot sign in to the AI service. Ask an administrator to check the AI API key.')
+        ->assertJsonPath('reason', 'invalid_api_key')
         ->assertDontSee('sk-test-secret');
 });
 
@@ -52,7 +54,8 @@ it('reports a provider timeout', function () {
         ->withHeaders(['origin' => 'http://localhost', 'referer' => 'http://localhost'])
         ->postJson('/api/ai/chat', ['message' => 'How many open service requests do we have?'])
         ->assertStatus(504)
-        ->assertJsonPath('message', 'The assistant took too long to respond.')
+        ->assertJsonPath('message', 'The assistant took too long to answer. Try again, or ask a shorter question.')
+        ->assertJsonPath('reason', 'timeout')
         ->assertDontSee('sk-test-secret');
 });
 
@@ -68,7 +71,8 @@ it('reports a malformed model response', function () {
         ->withHeaders(['origin' => 'http://localhost', 'referer' => 'http://localhost'])
         ->postJson('/api/ai/chat', ['message' => 'How many open service requests do we have?'])
         ->assertStatus(502)
-        ->assertJsonPath('message', 'The assistant returned a response I could not use.');
+        ->assertJsonPath('message', 'The assistant sent an answer it could not read. Try again.')
+        ->assertJsonPath('reason', 'malformed_response');
 });
 
 it('records invalid tool arguments from the model', function () {
@@ -215,7 +219,7 @@ it('does not answer with the fake provider in production', function () {
     app()->forgetInstance(AIProviderInterface::class);
 
     expect(fn () => app(AIProviderInterface::class)->complete([], []))
-        ->toThrow(AIException::class, 'The assistant is not configured.');
+        ->toThrow(AIException::class, 'The assistant is not set up yet. Ask an administrator to add the AI API key.');
 });
 
 function openaiContext(OrganizationRole $role = OrganizationRole::Owner): array

@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\AI\Exceptions\AIException;
 use App\AI\Services\AIConversationService;
+use App\AI\Support\AIErrorMessages;
 use App\Models\Branch;
+use App\Support\OrganizationContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -18,19 +20,43 @@ class AiChatController extends Controller
             'conversation_id' => ['nullable', 'string'],
         ]);
 
+        // API routes skip the web SetLocale middleware, so take the interface locale here.
+        $locale = self::interfaceLocale($request);
+        app()->setLocale($locale);
+
         try {
             return response()->json($conversations->chat(
                 $request->user(),
                 $data,
                 $this->branchId($request),
+                $locale,
             ));
         } catch (AIException $exception) {
             Log::warning('ai.chat_failed', [
-                'reason' => $exception->context['reason'] ?? 'provider_error',
+                'reason' => $exception->reason(),
             ]);
 
-            return response()->json(['message' => $exception->publicMessage], $exception->status);
+            return response()->json([
+                'message' => $exception->userMessage($locale),
+                'reason' => AIErrorMessages::key($exception->reason()),
+            ], $exception->status);
         }
+    }
+
+    /** The session locale the user picked, else the organization locale, else the app default. */
+    public static function interfaceLocale(Request $request): string
+    {
+        $locales = config('opsai.locales');
+        $session = $request->hasSession() ? $request->session()->get('locale') : null;
+        $organization = OrganizationContext::current()?->organization->locale;
+
+        foreach ([$session, $organization] as $candidate) {
+            if (is_string($candidate) && in_array($candidate, $locales, true)) {
+                return $candidate;
+            }
+        }
+
+        return (string) config('app.locale');
     }
 
     private function branchId(Request $request): ?string

@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { PageHeader } from '@/components/PageHeader';
 import { Pagination } from '@/components/Pagination';
 import { StatusBadge } from '@/components/StatusBadge';
+import { WhatsAppAttention, type WhatsAppHealth } from '@/components/WhatsAppAttention';
 import { useI18n } from '@/i18n';
 import AppLayout from '@/layouts/AppLayout';
 import { useFormat } from '@/lib/format';
@@ -23,7 +24,17 @@ type ConversationRow = {
     preview: string | null;
 };
 
-export default function Index({ conversations, simulation }: { conversations: Paginator<ConversationRow>; simulation: boolean }) {
+export default function Index({
+    conversations,
+    simulation,
+    health,
+    canManageSettings,
+}: {
+    conversations: Paginator<ConversationRow>;
+    simulation: boolean;
+    health: WhatsAppHealth;
+    canManageSettings: boolean;
+}) {
     const { t } = useI18n();
     const format = useFormat();
     const form = useForm({ from: '', text: '' });
@@ -31,6 +42,7 @@ export default function Index({ conversations, simulation }: { conversations: Pa
     return (
         <>
             <PageHeader title={t.whatsapp.title} subtitle={t.whatsapp.emptyHint} action={<ButtonLink variant="secondary" href="/settings/integrations/whatsapp">{t.whatsapp.settings}</ButtonLink>} />
+            <WhatsAppAttention health={health} canManageSettings={canManageSettings} />
             {simulation ? (
                 <CardForm className="mb-4 grid items-end gap-3 p-4 md:grid-cols-[1fr_2fr_auto]" onSubmit={(event) => {
                         event.preventDefault();
