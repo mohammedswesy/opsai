@@ -21,4 +21,10 @@ class WhatsAppConversationPolicy extends TenantPolicy
     {
         return $this->inTenant($conversation) && $this->can($user, 'whatsapp.manage');
     }
+
+    /** Anyone who may reply in the inbox may send an approved template. */
+    public function sendTemplate(User $user, WhatsAppConversation $conversation): bool
+    {
+        return $this->reply($user, $conversation);
+    }
 }

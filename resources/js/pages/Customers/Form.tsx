@@ -2,7 +2,7 @@ import { Button, ButtonLink } from '@/components/Button';
 import { Card, CardForm } from '@/components/Card';
 import { useForm } from '@inertiajs/react';
 import type { ReactNode } from 'react';
-import { FormField, controlClassName } from '@/components/FormField';
+import { Checkbox, FormField, controlClassName } from '@/components/FormField';
 import { FormPage } from '@/components/FormPage';
 import { PageHeader } from '@/components/PageHeader';
 import { useI18n } from '@/i18n';
@@ -19,6 +19,7 @@ type Customer = {
     email: string | null;
     phone: string;
     whatsapp_number: string | null;
+    whatsapp_opt_in_at?: string | null;
     address: string | null;
     city: string | null;
     country: string | null;
@@ -38,6 +39,7 @@ export default function Form({ customer, branches }: { customer: Customer | null
         email: customer?.email ?? '',
         phone: customer?.phone ?? '',
         whatsapp_number: customer?.whatsapp_number ?? '',
+        whatsapp_opt_in: Boolean(customer?.whatsapp_opt_in_at),
         address: customer?.address ?? '',
         city: customer?.city ?? '',
         country: customer?.country ?? '',
@@ -78,6 +80,15 @@ export default function Form({ customer, branches }: { customer: Customer | null
                 <FormField label={t.ops.whatsapp} error={form.errors.whatsapp_number}>
                     <input className={controlClassName} value={form.data.whatsapp_number} onChange={(event) => form.setData('whatsapp_number', event.target.value)} />
                 </FormField>
+                <div className="space-y-1 md:col-span-2">
+                    <Checkbox
+                        data-testid="customer-whatsapp-opt-in"
+                        label={t.ops.whatsappOptIn}
+                        checked={form.data.whatsapp_opt_in}
+                        onChange={(event) => form.setData('whatsapp_opt_in', event.target.checked)}
+                    />
+                    <p className="text-caption text-ink-muted">{t.ops.whatsappOptInHint}</p>
+                </div>
                 <FormField label={t.guest.email} error={form.errors.email}>
                     <input className={controlClassName} value={form.data.email} onChange={(event) => form.setData('email', event.target.value)} />
                 </FormField>

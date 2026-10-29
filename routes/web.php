@@ -85,11 +85,15 @@ Route::middleware('auth')->group(function () {
         Route::resource('tasks', TaskController::class)->except(['show', 'destroy']);
         Route::get('/whatsapp', [WhatsAppInboxController::class, 'index'])->name('whatsapp.index');
         Route::post('/whatsapp/simulate', [WhatsAppSimulationController::class, 'store'])->name('whatsapp.simulate');
+        Route::get('/whatsapp/setup-guide', [WhatsAppIntegrationController::class, 'guide'])->name('whatsapp.guide');
         Route::get('/whatsapp/{conversation}', [WhatsAppInboxController::class, 'show'])->name('whatsapp.show');
         Route::post('/whatsapp/{conversation}/reply', [WhatsAppInboxController::class, 'reply'])->name('whatsapp.reply');
+        Route::post('/whatsapp/{conversation}/template', [WhatsAppInboxController::class, 'template'])->name('whatsapp.template');
         Route::post('/whatsapp/{conversation}/resume', [WhatsAppInboxController::class, 'resume'])->name('whatsapp.resume');
         Route::get('/settings/integrations/whatsapp', [WhatsAppIntegrationController::class, 'edit'])->name('whatsapp.settings');
         Route::put('/settings/integrations/whatsapp', [WhatsAppIntegrationController::class, 'update'])->name('whatsapp.settings.update');
         Route::post('/settings/integrations/whatsapp/verify', [WhatsAppIntegrationController::class, 'verify'])->name('whatsapp.settings.verify');
+        Route::put('/settings/integrations/whatsapp/reminders', [WhatsAppIntegrationController::class, 'reminders'])->name('whatsapp.settings.reminders');
+        Route::post('/settings/integrations/whatsapp/templates/sync', [WhatsAppIntegrationController::class, 'syncTemplates'])->name('whatsapp.settings.templates.sync');
     });
 });

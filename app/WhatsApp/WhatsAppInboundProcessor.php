@@ -24,6 +24,7 @@ use App\Support\OrganizationContext;
 use App\Support\PhoneNormalizer;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class WhatsAppInboundProcessor
 {
@@ -63,6 +64,10 @@ class WhatsAppInboundProcessor
         } catch (WhatsAppException $exception) {
             Log::warning('whatsapp.processing_failed', ['reason' => $exception->reason]);
             $event->update(['status' => 'failed', 'error' => $exception->publicMessage]);
+        } catch (Throwable $exception) {
+            // Without this the event would stay "processing" and every retry would skip it.
+            Log::error('whatsapp.processing_crashed', ['event_id' => $event->id, 'exception' => $exception::class]);
+            $event->update(['status' => 'failed', 'error' => 'Unexpected error while processing the event.']);
         }
     }
 
@@ -87,7 +92,12 @@ class WhatsAppInboundProcessor
 
         if ($status === 'failed') {
             $message->failed_at = now();
-            $message->metadata = [...($message->metadata ?? []), 'reason' => $payload['error'] ?? 'failed'];
+            $message->metadata = [
+                ...($message->metadata ?? []),
+                'reason' => isset($payload['error_code']) ? MetaErrorCodes::reason((int) $payload['error_code']) : 'failed',
+                'error_code' => $payload['error_code'] ?? null,
+                'error_title' => $payload['error'] ?? null,
+            ];
         }
 
         $message->save();
@@ -120,7 +130,7 @@ class WhatsAppInboundProcessor
             $conversation->update(['customer_id' => $customer->id, 'contact_name' => $conversation->contact_name ?: $customer->name]);
         }
 
-        $text = (string) ($event->payload['text'] ?? '');
+        $text = trim((string) ($event->payload['text'] ?? ''));
         $stored = $this->storeInbound($conversation, $integration, $customer, $phone, $event->payload, $text);
 
         if ($stored === null) {
@@ -128,6 +138,13 @@ class WhatsAppInboundProcessor
         }
 
         if ($conversation->status === 'human_required') {
+            return;
+        }
+
+        // Audio, location, stickers, images without a caption, ...: kept for staff, never sent to the assistant.
+        if ($text === '') {
+            $this->textOnlyNotice($conversation, $integration, (string) ($event->payload['type'] ?? 'unknown'));
+
             return;
         }
 
@@ -199,7 +216,8 @@ class WhatsAppInboundProcessor
                 'from_number' => $phone,
                 'to_number' => (string) ($integration->metadata['phone_number_id'] ?? ''),
                 'message_type' => (string) ($payload['type'] ?? 'text'),
-                'text' => $text,
+                'text' => $text !== '' ? $text : null,
+                'media' => is_array($payload['media'] ?? null) && $payload['media'] !== [] ? $payload['media'] : null,
                 'status' => 'received',
                 'metadata' => ['author' => 'customer'],
             ]);
@@ -283,6 +301,46 @@ class WhatsAppInboundProcessor
             ? 'أهلاً بك. ما اسمك حتى نتابع طلبك؟'
             : 'Welcome. What is your name so we can continue?';
         $this->messenger->sendText($conversation, $integration, $reply, 'system');
+    }
+
+    /**
+     * Tells the customer once that only text is read. Reactions and system notices get no
+     * reply, and the notice is not repeated while it is still the last message sent.
+     */
+    private function textOnlyNotice(WhatsAppConversation $conversation, Integration $integration, string $type): void
+    {
+        if (in_array($type, ['reaction', 'system', 'ephemeral', 'request_welcome'], true)) {
+            return;
+        }
+
+        $arabic = $this->prefersArabic($conversation);
+        $notice = $arabic
+            ? 'حالياً أقدر أقرأ الرسائل النصية فقط. اكتب لي طلبك لو سمحت.'
+            : 'I can only read text messages for now. Please type your request.';
+
+        $lastOutbound = $conversation->messages()->where('direction', 'outbound')->latest('id')->value('text');
+
+        if ($lastOutbound === $notice) {
+            return;
+        }
+
+        $this->messenger->sendText($conversation, $integration, $notice, 'system');
+    }
+
+    /** Arabic when the customer's last text was Arabic, else the organization locale. */
+    private function prefersArabic(WhatsAppConversation $conversation): bool
+    {
+        $lastText = $conversation->messages()
+            ->where('direction', 'inbound')
+            ->whereNotNull('text')
+            ->latest('id')
+            ->value('text');
+
+        if (is_string($lastText) && $lastText !== '') {
+            return preg_match('/\p{Arabic}/u', $lastText) === 1;
+        }
+
+        return OrganizationContext::current()?->organization->locale === 'ar';
     }
 
     private function aiConversation(WhatsAppConversation $conversation, Customer $customer): AiConversation

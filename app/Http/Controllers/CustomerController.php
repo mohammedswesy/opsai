@@ -42,7 +42,7 @@ class CustomerController extends Controller
 
     public function store(StoreCustomerRequest $request, CustomerService $customers): RedirectResponse
     {
-        $customer = $customers->create($request->validated());
+        $customer = $customers->create($request->customerData());
 
         return redirect()->route('customers.show', $customer)->with('success', __('Customer saved.'));
     }
@@ -75,7 +75,7 @@ class CustomerController extends Controller
 
     public function update(UpdateCustomerRequest $request, Customer $customer, CustomerService $customers): RedirectResponse
     {
-        $customers->update($customer, $request->validated());
+        $customers->update($customer, $request->customerData($customer));
 
         return redirect()->route('customers.show', $customer)->with('success', __('Customer saved.'));
     }

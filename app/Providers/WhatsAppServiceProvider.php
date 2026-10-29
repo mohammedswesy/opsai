@@ -35,12 +35,17 @@ class WhatsAppServiceProvider extends ServiceProvider
                     throw new WhatsAppException('WhatsApp templates are not configured.', 'unsupported_provider');
                 }
 
+                public function listTemplates(string $businessAccountId, ?string $accessToken = null): never
+                {
+                    throw new WhatsAppException('WhatsApp is not configured.', 'unsupported_provider');
+                }
+
                 public function sendMediaMessage(string $to, string $mediaId, string $phoneNumberId, ?string $accessToken = null): never
                 {
                     throw new WhatsAppException('WhatsApp is not configured.', 'unsupported_provider');
                 }
 
-                public function verifyWebhook(string $mode, string $token, string $challenge): ?string
+                public function verifyWebhook(string $mode, string $token, string $challenge, ?string $expected = null): ?string
                 {
                     return null;
                 }
@@ -55,7 +60,7 @@ class WhatsAppServiceProvider extends ServiceProvider
                     return [];
                 }
 
-                public function verifySignature(string $payload, ?string $signature): bool
+                public function verifySignature(string $payload, ?string $signature, ?string $secret = null): bool
                 {
                     return false;
                 }

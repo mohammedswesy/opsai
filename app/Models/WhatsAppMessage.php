@@ -19,6 +19,7 @@ class WhatsAppMessage extends Model
         'integration_id',
         'whatsapp_conversation_id',
         'external_message_id',
+        'idempotency_key',
         'direction',
         'from_number',
         'to_number',

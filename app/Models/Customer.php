@@ -25,6 +25,7 @@ class Customer extends Model
         'email',
         'phone',
         'whatsapp_number',
+        'whatsapp_opt_in_at',
         'address',
         'city',
         'country',
@@ -38,6 +39,7 @@ class Customer extends Model
         return [
             'type' => CustomerType::class,
             'status' => RecordStatus::class,
+            'whatsapp_opt_in_at' => 'datetime',
         ];
     }
 

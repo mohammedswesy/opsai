@@ -15,6 +15,9 @@ class Integration extends Model
         'provider',
         'type',
         'status',
+        'reminders_enabled',
+        'attention_reason',
+        'attention_at',
         'credentials',
         'metadata',
     ];
@@ -24,6 +27,8 @@ class Integration extends Model
         return [
             'credentials' => 'encrypted:array',
             'metadata' => 'array',
+            'reminders_enabled' => 'boolean',
+            'attention_at' => 'datetime',
         ];
     }
 
@@ -44,6 +49,26 @@ class Integration extends Model
             'token_hint' => $this->hint($credentials['access_token'] ?? null),
             'secret_hint' => $this->hint($credentials['app_secret'] ?? null),
             'verify_token_set' => is_string($credentials['verify_token'] ?? null) && $credentials['verify_token'] !== '',
+        ];
+    }
+
+    public function needsAttention(): bool
+    {
+        return $this->attention_reason !== null;
+    }
+
+    /**
+     * Connection health for the WhatsApp pages: a reason code and when it was seen,
+     * never Meta's own error text.
+     *
+     * @return array{needs_attention: bool, reason: string|null, since: string|null}
+     */
+    public function health(): array
+    {
+        return [
+            'needs_attention' => $this->needsAttention(),
+            'reason' => $this->attention_reason,
+            'since' => $this->attention_at?->toIso8601String(),
         ];
     }
 
