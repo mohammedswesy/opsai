@@ -33,7 +33,7 @@ Working demo. Backend and UI are covered by automated tests, but two integration
 ## Stack
 
 - Laravel 12, PHP 8.2, session authentication, Laravel Sanctum
-- React, TypeScript, Inertia.js, Tailwind CSS, Vite
+- Vue, React, TypeScript, Inertia.js, Tailwind CSS, Vite
 - Pest for backend tests, Playwright for end-to-end tests
 - SQLite for local development and tests. MySQL is the intended production database and is configured in `config/database.php`
 
