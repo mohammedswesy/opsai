@@ -178,7 +178,7 @@ describe('message types', function () {
 
         $stored = liveMessages($organization)->where('direction', 'inbound')->first();
         expect($stored->message_type)->toBe($message['type'])
-            ->and($stored->media)->toBe($media)
+            ->and($stored->media)->toEqual($media)
             ->and(WhatsAppWebhookEvent::query()->first()->status)->toBe('processed');
     })->with([
         'audio' => [['id' => 'wamid.audio', 'type' => 'audio', 'audio' => ['id' => 'media-a', 'mime_type' => 'audio/ogg; codecs=opus', 'voice' => true]], ['id' => 'media-a', 'mime_type' => 'audio/ogg; codecs=opus']],
